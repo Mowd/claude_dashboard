@@ -1,3 +1,5 @@
+English | [繁體中文](README.zh-TW.md)
+
 # Claude Dashboard
 
 Multi-agent software development dashboard powered by Claude.
@@ -24,7 +26,7 @@ Multi-agent software development dashboard powered by Claude.
 
 ## Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 23.6+
 - **Claude CLI** installed and configured ([docs](https://docs.anthropic.com/en/docs/claude-cli))
 
 ## Quick Start

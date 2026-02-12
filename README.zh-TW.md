@@ -1,3 +1,5 @@
+[English](README.md) | 繁體中文
+
 # Claude Dashboard
 
 以 Claude 驅動的多代理軟體開發儀表板。
@@ -24,7 +26,7 @@
 
 ## 前置需求
 
-- **Node.js** 18+
+- **Node.js** 23.6+
 - **Claude CLI** 已安裝並設定完成（[文件](https://docs.anthropic.com/en/docs/claude-cli)）
 
 ## 快速開始
