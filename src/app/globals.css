@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 228 14% 8%;
+    --foreground: 220 10% 90%;
+    --card: 225 14% 11%;
+    --card-foreground: 220 10% 90%;
+    --popover: 225 14% 11%;
+    --popover-foreground: 220 10% 90%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 225 14% 15%;
+    --secondary-foreground: 220 10% 90%;
+    --muted: 225 14% 15%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 225 14% 18%;
+    --accent-foreground: 220 10% 90%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 225 14% 18%;
+    --input: 225 14% 18%;
+    --ring: 262 83% 58%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(225 14% 8%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(225 14% 22%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(225 14% 30%);
+}
+
+/* Agent card markdown prose overrides */
+.agent-output .prose {
+  @apply text-sm leading-relaxed;
+}
+
+.agent-output .prose pre {
+  @apply bg-black/40 rounded-md text-xs;
+}
+
+.agent-output .prose code {
+  @apply text-xs;
+}
+
+/* Terminal container */
+.terminal-container .xterm {
+  padding: 8px;
+}
