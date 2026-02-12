@@ -1,11 +1,13 @@
-import { AgentRole, AGENT_ORDER, AGENT_CONFIG } from '../workflow/types';
+import { type AgentRole, AGENT_ORDER, AGENT_CONFIG } from '../workflow/types.ts';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 // ---------------------------------------------------------------------------
 // Prompt template loading
 // ---------------------------------------------------------------------------
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROMPTS_DIR = join(__dirname, '..', '..', '..', 'prompts');
 
 /**

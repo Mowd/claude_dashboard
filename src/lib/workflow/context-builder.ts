@@ -1,4 +1,4 @@
-import { AgentRole, AGENT_ORDER, AGENT_CONFIG } from './types';
+import { type AgentRole, AGENT_ORDER, AGENT_CONFIG } from './types.ts';
 
 export interface AgentContext {
   role: AgentRole;

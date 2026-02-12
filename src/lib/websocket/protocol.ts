@@ -1,4 +1,4 @@
-import type { AgentRole, AgentActivity } from '@/lib/workflow/types';
+import type { AgentRole, AgentActivity } from '../workflow/types.ts';
 
 // ---------------------------------------------------------------------------
 // Client -> Server messages

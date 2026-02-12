@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { AgentRole, AgentActivity, AGENT_ORDER, AGENT_CONFIG, WorkflowStatus } from './types';
-import { PipelineState, createPipelineState } from './pipeline';
-import { AgentRunner } from './agent-runner';
-import { buildAgentPrompt, AgentContext } from './context-builder';
-import { getSystemPrompt } from '../agents/prompts';
+import { type AgentRole, type AgentActivity, AGENT_ORDER, AGENT_CONFIG, type WorkflowStatus } from './types.ts';
+import { type PipelineState, createPipelineState } from './pipeline.ts';
+import { AgentRunner } from './agent-runner.ts';
+import { buildAgentPrompt, type AgentContext } from './context-builder.ts';
+import { getSystemPrompt } from '../agents/prompts.ts';
 
 export interface WorkflowEngineEvents {
   'workflow:created': (workflowId: string, title: string) => void;

@@ -1,6 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
-import { AgentRole, AgentActivity, AGENT_CONFIG } from './types';
+import { type AgentRole, type AgentActivity, AGENT_CONFIG } from './types.ts';
 
 export interface AgentRunnerEvents {
   stream: (chunk: string) => void;

@@ -1,8 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
-import { ConnectionManager } from './connection-manager';
-import { WorkflowEngine } from '../workflow/engine';
-import { PtyManager } from '../terminal/pty-manager';
+import { ConnectionManager } from './connection-manager.ts';
+import { WorkflowEngine } from '../workflow/engine.ts';
+import { PtyManager } from '../terminal/pty-manager.ts';
 
 export function setupWebSocketHandlers(
   wss: WebSocketServer,

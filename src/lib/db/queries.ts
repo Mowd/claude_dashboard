@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getDb } from './connection';
+import { getDb } from './connection.ts';
 import {
   AGENT_ORDER,
   type AgentRole,
@@ -7,7 +7,7 @@ import {
   type StepStatus,
   type Workflow,
   type WorkflowStatus,
-} from '@/lib/workflow/types';
+} from '../workflow/types.ts';
 
 // ---------------------------------------------------------------------------
 // Internal helpers: snake_case <-> camelCase row mapping

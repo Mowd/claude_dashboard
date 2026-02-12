@@ -1,4 +1,4 @@
-import { AgentRole, AGENT_ORDER, WorkflowStatus, StepStatus } from './types';
+import { type AgentRole, AGENT_ORDER, type WorkflowStatus, type StepStatus } from './types.ts';
 
 export interface PipelineState {
   workflowId: string;

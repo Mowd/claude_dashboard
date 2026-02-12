@@ -18,7 +18,7 @@ async function main() {
   console.log(`  Dashboard: http://${host}:${port}`);
   console.log();
 
-  const serverProcess = spawn("npx", ["tsx", "server.ts"], {
+  const serverProcess = spawn("node", ["server.ts"], {
     cwd: dashboardDir,
     env: {
       ...process.env,

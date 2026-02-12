@@ -2,12 +2,13 @@
   "name": "claude-dashboard",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "bin": {
     "cdb": "./bin/cdb"
   },
   "scripts": {
     "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true",
-    "dev": "tsx server.ts",
+    "dev": "node server.ts",
     "build": "next build && tsc -p tsconfig.server.json",
     "start": "node dist/server.js",
     "lint": "next lint"
@@ -15,9 +16,9 @@
   "dependencies": {
     "@tanstack/react-virtual": "^3.11.2",
     "autoprefixer": "^10.4.24",
-    "better-sqlite3": "^11.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "better-sqlite3": "^11.7.0",
     "express": "^4.21.0",
     "lucide-react": "^0.468.0",
     "next": "^15.5.12",

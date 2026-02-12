@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { existsSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 // node-pty is optional - gracefully handle if not available
 let pty: any;

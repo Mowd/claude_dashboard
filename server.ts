@@ -2,12 +2,12 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { WebSocketServer } from 'ws';
-import { ConnectionManager } from './src/lib/websocket/connection-manager';
-import { setupWebSocketHandlers } from './src/lib/websocket/server';
-import { WorkflowEngine } from './src/lib/workflow/engine';
-import { PtyManager } from './src/lib/terminal/pty-manager';
-import { getDb, closeDb } from './src/lib/db/connection';
-import * as queries from './src/lib/db/queries';
+import { ConnectionManager } from './src/lib/websocket/connection-manager.ts';
+import { setupWebSocketHandlers } from './src/lib/websocket/server.ts';
+import { WorkflowEngine } from './src/lib/workflow/engine.ts';
+import { PtyManager } from './src/lib/terminal/pty-manager.ts';
+import { getDb, closeDb } from './src/lib/db/connection.ts';
+import * as queries from './src/lib/db/queries.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOST || 'localhost';
@@ -15,6 +15,7 @@ const port = parseInt(process.env.PORT || '3000', 10);
 const projectPath = process.env.PROJECT_PATH || process.cwd();
 
 async function main() {
+  // @ts-expect-error next CJS default export is callable but nodenext types don't reflect this
   const app = next({ dev, hostname, port });
   const handle = app.getRequestHandler();
 

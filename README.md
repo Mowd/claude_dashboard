@@ -2,7 +2,7 @@
 
 Multi-agent software development dashboard powered by Claude.
 
-<!-- screenshot -->
+![Claude Dashboard Screenshot](https://meee.com.tw/BF17g4Y.jpg)
 
 ## Features
 

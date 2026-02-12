@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { SCHEMA } from './schema';
+import { SCHEMA } from './schema.ts';
 
 let db: Database.Database | null = null;
 
