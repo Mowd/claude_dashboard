@@ -303,7 +303,7 @@ export function getSystemPrompt(role: AgentRole, projectPath: string): string {
     OUTPUT_STRUCTURE[role],
     '',
     '## Output Language',
-    'Always respond in Traditional Chinese (台灣繁體中文). Use zh-TW for all explanations and communications. Technical terms and code identifiers should remain in their original form.',
+    'Respond in the same language as the user\'s prompt. If the user writes in English, respond in English. If the user writes in Traditional Chinese, respond in Traditional Chinese. Match the user\'s language. Technical terms and code identifiers should remain in their original form.',
   ];
 
   return sections.join('\n');

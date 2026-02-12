@@ -101,6 +101,12 @@ claude_dashboard/
 └── tsconfig.json
 ```
 
+## ☕ Buy Me a Coffee
+
+If you find this project helpful, consider buying me a coffee!
+
+<a href="https://buymeacoffee.com/mowd" target="_blank"><img src="https://mowd.tw/buymeacoffee.png" alt="Buy Me A Coffee" width="300"></a>
+
 ## License
 
 [MIT](./LICENSE)

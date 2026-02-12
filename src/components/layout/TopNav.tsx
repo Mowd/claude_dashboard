@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useWorkflowStore } from "@/stores/workflowStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { AGENT_ORDER } from "@/lib/workflow/types";
+import { UsageIndicator } from "@/components/layout/UsageIndicator";
 
 function formatDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -46,8 +47,8 @@ export function TopNav() {
 
   return (
     <header className="h-12 border-b border-border bg-card flex items-center justify-between px-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold tracking-tight">
+      <div className="flex items-center gap-3 min-w-0">
+        <h1 className="text-sm font-semibold tracking-tight whitespace-nowrap">
           Claude Dashboard
         </h1>
         {title && (
@@ -55,6 +56,8 @@ export function TopNav() {
             {title}
           </span>
         )}
+        <div className="hidden md:block h-4 w-px bg-border" />
+        <UsageIndicator />
       </div>
 
       <div className="flex items-center gap-3">
