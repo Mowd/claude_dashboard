@@ -43,8 +43,30 @@ export interface AgentStep {
   completedAt: string | null;
 }
 
-/** The fixed execution order for agents within a workflow. */
-export const AGENT_ORDER: AgentRole[] = ['pm', 'rd', 'ui', 'test', 'sec'];
+// ---------------------------------------------------------------------------
+// Pipeline stages — defines parallel execution groups
+// ---------------------------------------------------------------------------
+
+export interface PipelineStage {
+  index: number;
+  roles: AgentRole[];
+}
+
+export const PIPELINE_STAGES: PipelineStage[] = [
+  { index: 0, roles: ['pm'] },
+  { index: 1, roles: ['rd', 'ui'] },
+  { index: 2, roles: ['test', 'sec'] },
+];
+
+/** The fixed execution order for agents within a workflow (derived from stages). */
+export const AGENT_ORDER: AgentRole[] = PIPELINE_STAGES.flatMap(s => s.roles);
+
+/** Get the pipeline stage that contains the given role. */
+export function getStageForRole(role: AgentRole): PipelineStage {
+  const stage = PIPELINE_STAGES.find(s => s.roles.includes(role));
+  if (!stage) throw new Error(`No stage found for role: ${role}`);
+  return stage;
+}
 
 export const AGENT_CONFIG: Record<
   AgentRole,

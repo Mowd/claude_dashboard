@@ -1,4 +1,4 @@
-import { type AgentRole, AGENT_ORDER, AGENT_CONFIG } from '../workflow/types.ts';
+import { type AgentRole, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole } from '../workflow/types.ts';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -57,15 +57,17 @@ Then create/modify the actual code files.`,
 
   ui: `# UI Agent
 
-You are the UI (Frontend) Agent. Your job is to design and implement the frontend components, pages, and styling.
+You are the UI (Frontend) Agent. Your job is to design and implement **pure frontend** components, pages, and styling.
 
-## Access: Full (Read, Edit, Bash)
+## Access: Frontend files ONLY (Read all, Edit/Create frontend only, Bash)
 
-## Output the following sections, then implement:
+## Scope: You may ONLY modify React components, pages, layouts, stylesheets, hooks, UI stores, and static assets. Do NOT modify backend code, API routes, or src/lib/**. If there is no frontend work, state "No frontend changes required." and finish.
+
+## Output the following sections, then implement (if applicable):
 - Component Structure
 - UI/UX Plan
 
-Then create/modify the actual frontend code files.`,
+Then create/modify the actual frontend code files, or state that no changes are needed.`,
 
   test: `# TEST Agent
 
@@ -117,14 +119,30 @@ const TOOL_DESCRIPTIONS: Record<AgentRole, string> = {
     'You may execute bash commands to install dependencies, compile, and validate your work.',
     'Do NOT implement frontend code (that is the UI agent\'s job).',
     'Do NOT write tests (that is the TEST agent\'s job).',
+    'NOTE: The UI agent is running IN PARALLEL with you. You own backend/server files; the UI agent owns frontend files. Avoid touching frontend code to prevent conflicts.',
   ].join('\n'),
 
   ui: [
-    'You have FULL access to the project.',
-    'You may read, create, and modify files.',
-    'You may execute bash commands to install dependencies and validate your work.',
-    'Do NOT modify backend/server code (that is the RD agent\'s job).',
-    'Do NOT write tests (that is the TEST agent\'s job).',
+    'You have access to read, create, and modify **frontend/UI files ONLY**.',
+    'You may execute bash commands to install frontend dependencies and validate your work.',
+    '',
+    '## File Scope (STRICTLY ENFORCED)',
+    'You may ONLY create or modify files in these categories:',
+    '- React components, pages, layouts (e.g. src/components/**, src/app/**/page.tsx, src/app/**/layout.tsx)',
+    '- Stylesheets and CSS (e.g. *.css, *.scss, tailwind config)',
+    '- Frontend hooks for UI state/interaction (e.g. src/hooks/**)',
+    '- Frontend stores for UI state (e.g. src/stores/**)',
+    '- TypeScript type definitions for UI props/state (e.g. src/types/**)',
+    '- Static assets (e.g. public/**)',
+    '',
+    'You must NOT create or modify:',
+    '- API routes with business logic (e.g. src/app/api/**/route.ts)',
+    '- Backend/server modules (e.g. src/lib/**)',
+    '- Database schemas, migrations, or queries',
+    '- Server-side utilities, workflow logic, or agent code',
+    '- Configuration files for backend services',
+    '',
+    'If the task has NO frontend work to do, output your design documentation and state "No frontend changes required." — do NOT force unnecessary modifications.',
   ].join('\n'),
 
   test: [
@@ -262,16 +280,23 @@ const OUTPUT_STRUCTURE: Record<AgentRole, string> = {
 export function getSystemPrompt(role: AgentRole, projectPath: string): string {
   const template = loadPromptTemplate(role);
   const config = AGENT_CONFIG[role];
-  const roleIndex = AGENT_ORDER.indexOf(role);
+  const currentStage = getStageForRole(role);
 
-  const pipelinePosition = roleIndex === 0
-    ? 'You are the FIRST agent in the pipeline. There is no prior context.'
-    : `You are agent ${roleIndex + 1} of ${AGENT_ORDER.length} in the pipeline.`;
+  const pipelinePosition = currentStage.index === 0
+    ? 'You are in Stage 1 of 3 (first stage). There is no prior context.'
+    : `You are in Stage ${currentStage.index + 1} of ${PIPELINE_STAGES.length}.`;
 
-  const upstreamAgents = AGENT_ORDER.slice(0, roleIndex)
+  const peers = currentStage.roles
+    .filter((r) => r !== role)
     .map((r) => AGENT_CONFIG[r].label);
-  const downstreamAgents = AGENT_ORDER.slice(roleIndex + 1)
-    .map((r) => AGENT_CONFIG[r].label);
+
+  const upstreamAgents = PIPELINE_STAGES
+    .filter((s) => s.index < currentStage.index)
+    .flatMap((s) => s.roles.map((r) => AGENT_CONFIG[r].label));
+
+  const downstreamAgents = PIPELINE_STAGES
+    .filter((s) => s.index > currentStage.index)
+    .flatMap((s) => s.roles.map((r) => AGENT_CONFIG[r].label));
 
   const sections: string[] = [
     template,
@@ -285,12 +310,15 @@ export function getSystemPrompt(role: AgentRole, projectPath: string): string {
     '',
     `## Pipeline Position`,
     pipelinePosition,
+    ...(peers.length > 0
+      ? [`Running IN PARALLEL with: ${peers.join(', ')}`]
+      : []),
     ...(upstreamAgents.length > 0
-      ? [`Agents that ran before you: ${upstreamAgents.join(' -> ')}`]
+      ? [`Agents that ran before you (prior stages): ${upstreamAgents.join(', ')}`]
       : []),
     ...(downstreamAgents.length > 0
-      ? [`Agents that will run after you: ${downstreamAgents.join(' -> ')}`]
-      : ['You are the FINAL agent in the pipeline.']),
+      ? [`Agents that will run after this stage: ${downstreamAgents.join(', ')}`]
+      : ['You are in the FINAL stage of the pipeline.']),
     '',
     '## Tool Permissions',
     TOOL_DESCRIPTIONS[role],
@@ -305,7 +333,7 @@ export function getSystemPrompt(role: AgentRole, projectPath: string): string {
     OUTPUT_STRUCTURE[role],
     '',
     '## Output Language',
-    'Respond in the same language as the user\'s prompt. If the user writes in English, respond in English. If the user writes in Traditional Chinese, respond in Traditional Chinese. Match the user\'s language. Technical terms and code identifiers should remain in their original form.',
+    'IMPORTANT: You MUST respond in the same language as the text under "# User Request" in your prompt. The structural template around it (headers, labels, instructions) is always in English — ignore the template language. Focus ONLY on the language the user actually wrote in. If the user wrote in Traditional Chinese, you MUST respond entirely in Traditional Chinese. If in English, respond in English. Technical terms and code identifiers should remain in their original form.',
   ];
 
   return sections.join('\n');

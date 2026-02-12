@@ -7,13 +7,13 @@ export interface WorkflowState {
   workflowId: string | null;
   status: WorkflowStatus;
   title: string;
-  currentStepIndex: number;
+  currentStageIndex: number;
   startedAt: number | null;
   completedAt: number | null;
 
   setWorkflow: (id: string, title: string) => void;
   setStatus: (status: WorkflowStatus) => void;
-  setCurrentStep: (index: number) => void;
+  setCurrentStage: (index: number) => void;
   setCompleted: () => void;
   reset: () => void;
 }
@@ -22,7 +22,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   workflowId: null,
   status: "pending",
   title: "",
-  currentStepIndex: 0,
+  currentStageIndex: 0,
   startedAt: null,
   completedAt: null,
 
@@ -33,7 +33,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       status: "running",
       startedAt: Date.now(),
       completedAt: null,
-      currentStepIndex: 0,
+      currentStageIndex: 0,
     }),
 
   setStatus: (status) => {
@@ -41,7 +41,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     set(isTerminal ? { status, completedAt: Date.now() } : { status });
   },
 
-  setCurrentStep: (index) => set({ currentStepIndex: index }),
+  setCurrentStage: (index) => set({ currentStageIndex: index }),
 
   setCompleted: () => set({ status: "completed", completedAt: Date.now() }),
 
@@ -50,7 +50,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       workflowId: null,
       status: "pending",
       title: "",
-      currentStepIndex: 0,
+      currentStageIndex: 0,
       startedAt: null,
       completedAt: null,
     }),

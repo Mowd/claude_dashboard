@@ -1,4 +1,5 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { createServer as createNetServer } from 'net';
 import { parse } from 'url';
 import next from 'next';
 import { WebSocketServer } from 'ws';
@@ -11,10 +12,36 @@ import * as queries from './src/lib/db/queries.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOST || 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
 const projectPath = process.env.PROJECT_PATH || process.cwd();
 
+function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let attempt = 0;
+    const tryPort = (port: number) => {
+      const tester = createNetServer();
+      tester.once('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE' && attempt < maxAttempts) {
+          attempt++;
+          tryPort(port + 1);
+        } else {
+          reject(err);
+        }
+      });
+      tester.listen(port, () => {
+        tester.close(() => resolve(port));
+      });
+    };
+    tryPort(startPort);
+  });
+}
+
 async function main() {
+  const requestedPort = parseInt(process.env.PORT || '3000', 10);
+  const port = await findAvailablePort(requestedPort);
+  if (port !== requestedPort) {
+    console.log(`[Server] Port ${requestedPort} in use, using ${port}`);
+  }
+
   // @ts-expect-error next CJS default export is callable but nodenext types don't reflect this
   const app = next({ dev, hostname, port });
   const handle = app.getRequestHandler();

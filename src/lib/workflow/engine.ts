@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { type AgentRole, type AgentActivity, AGENT_ORDER, AGENT_CONFIG, type WorkflowStatus } from './types.ts';
+import { type AgentRole, type AgentActivity, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole, type WorkflowStatus } from './types.ts';
 import { type PipelineState, createPipelineState } from './pipeline.ts';
 import { AgentRunner } from './agent-runner.ts';
 import { buildAgentPrompt, type AgentContext } from './context-builder.ts';
@@ -79,12 +79,13 @@ export class WorkflowEngine extends EventEmitter {
     const pipeline = this.pipelines.get(workflowId);
     if (!pipeline) return;
 
-    for (let i = 0; i < AGENT_ORDER.length; i++) {
-      // Check if cancelled or paused (status may change via cancelWorkflow)
+    for (const stage of PIPELINE_STAGES) {
+      // Check if cancelled
       if ((pipeline.status as string) === 'cancelled') {
         this.cleanupWorkflow(workflowId);
         return;
       }
+      // Wait while paused
       while (this.paused.has(workflowId)) {
         await new Promise((resolve) => setTimeout(resolve, 500));
         if ((pipeline.status as string) === 'cancelled') {
@@ -93,25 +94,39 @@ export class WorkflowEngine extends EventEmitter {
         }
       }
 
-      const role = AGENT_ORDER[i];
-      pipeline.currentStepIndex = i;
-      this.dbOps.updateWorkflowStatus(workflowId, 'running', i);
+      pipeline.currentStageIndex = stage.index;
+      this.dbOps.updateWorkflowStatus(workflowId, 'running', stage.index);
 
-      const success = await this.executeStep(workflowId, role, userPrompt, projectPath);
-      if (!success) {
-        // If the workflow was cancelled, don't overwrite with 'failed'
+      // Execute all roles in this stage in parallel
+      const results = await Promise.allSettled(
+        stage.roles.map(role => this.executeStep(workflowId, role, userPrompt, projectPath))
+      );
+
+      // Check for failures after all peers finish
+      const failedRoles: string[] = [];
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const role = stage.roles[i];
+        const stepState = pipeline.steps.find(s => s.role === role);
+
+        if (result.status === 'fulfilled' && result.value) {
+          if (stepState) stepState.status = 'completed';
+        } else {
+          failedRoles.push(AGENT_CONFIG[role].label);
+        }
+      }
+
+      if (failedRoles.length > 0) {
         if ((pipeline.status as string) === 'cancelled') {
           this.cleanupWorkflow(workflowId);
           return;
         }
         pipeline.status = 'failed';
         this.dbOps.updateWorkflowStatus(workflowId, 'failed');
-        this.emit('workflow:failed', workflowId, `Agent ${AGENT_CONFIG[role].label} failed`);
+        this.emit('workflow:failed', workflowId, `Agent(s) ${failedRoles.join(', ')} failed`);
         this.cleanupWorkflow(workflowId);
         return;
       }
-
-      pipeline.steps[i].status = 'completed';
     }
 
     pipeline.status = 'completed';
@@ -130,12 +145,16 @@ export class WorkflowEngine extends EventEmitter {
     const stepId = stepIdMap.get(role)!;
     const outputsMap = this.stepOutputs.get(workflowId)!;
 
+    // Collect outputs from all prior stages (not peers in the same stage)
+    const currentStage = getStageForRole(role);
     const previousOutputs: AgentContext[] = [];
-    for (const prevRole of AGENT_ORDER) {
-      if (prevRole === role) break;
-      const output = outputsMap.get(prevRole);
-      if (output) {
-        previousOutputs.push({ role: prevRole, output });
+    for (const priorStage of PIPELINE_STAGES) {
+      if (priorStage.index >= currentStage.index) break;
+      for (const priorRole of priorStage.roles) {
+        const output = outputsMap.get(priorRole);
+        if (output) {
+          previousOutputs.push({ role: priorRole, output });
+        }
       }
     }
 

@@ -3,7 +3,7 @@ import { type AgentRole, AGENT_ORDER, type WorkflowStatus, type StepStatus } fro
 export interface PipelineState {
   workflowId: string;
   status: WorkflowStatus;
-  currentStepIndex: number;
+  currentStageIndex: number;
   steps: PipelineStepState[];
 }
 
@@ -17,7 +17,7 @@ export function createPipelineState(workflowId: string): PipelineState {
   return {
     workflowId,
     status: 'pending',
-    currentStepIndex: 0,
+    currentStageIndex: 0,
     steps: AGENT_ORDER.map((role) => ({
       role,
       status: 'pending',

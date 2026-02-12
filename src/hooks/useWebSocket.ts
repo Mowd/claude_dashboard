@@ -7,7 +7,7 @@ import { useEventStore } from "@/stores/eventStore";
 import { useTerminalStore } from "@/stores/terminalStore";
 import { OutputBuffer } from "@/lib/output-buffer";
 import type { AgentRole } from "@/lib/workflow/types";
-import { AGENT_CONFIG, AGENT_ORDER } from "@/lib/workflow/types";
+import { AGENT_CONFIG, AGENT_ORDER, getStageForRole } from "@/lib/workflow/types";
 
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
 
@@ -17,7 +17,7 @@ export function useWebSocket() {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const buffersRef = useRef<Map<string, OutputBuffer>>(new Map());
 
-  const { setWorkflow, setStatus, setCurrentStep, setCompleted } =
+  const { setWorkflow, setStatus, setCurrentStage, setCompleted } =
     useWorkflowStore();
   const { appendChunks, setAgentStarted, setAgentCompleted, setAgentFailed, setAgentActivity, setAgentRetry } =
     useAgentStore();
@@ -89,9 +89,9 @@ export function useWebSocket() {
 
         case "step:started": {
           const { role } = data.payload as { role: AgentRole };
-          const idx = AGENT_ORDER.indexOf(role);
+          const stage = getStageForRole(role);
           const currentRetry = useAgentStore.getState().agents[role].retryCount;
-          setCurrentStep(idx);
+          setCurrentStage(stage.index);
           setAgentStarted(role);
           const retryLabel = currentRetry > 0 ? ` (retry ${currentRetry})` : "";
           addEvent({
@@ -209,7 +209,7 @@ export function useWebSocket() {
     [
       setWorkflow,
       setStatus,
-      setCurrentStep,
+      setCurrentStage,
       setCompleted,
       setAgentStarted,
       setAgentCompleted,

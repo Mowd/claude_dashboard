@@ -1,4 +1,4 @@
-import { type AgentRole, AGENT_ORDER, AGENT_CONFIG } from './types.ts';
+import { type AgentRole, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole } from './types.ts';
 
 export interface AgentContext {
   role: AgentRole;
@@ -28,19 +28,35 @@ export function buildAgentPrompt(
   }
 
   const config = AGENT_CONFIG[role];
-  const roleIndex = AGENT_ORDER.indexOf(role);
-  const remainingAgents = AGENT_ORDER.slice(roleIndex + 1).map(
-    (r) => AGENT_CONFIG[r].label
+  const currentStage = getStageForRole(role);
+
+  // Peers running in parallel within the same stage
+  const peers = currentStage.roles
+    .filter((r) => r !== role)
+    .map((r) => AGENT_CONFIG[r].label);
+
+  // Agents in later stages
+  const downstreamStages = PIPELINE_STAGES.filter(
+    (s) => s.index > currentStage.index
+  );
+  const downstreamLabels = downstreamStages.flatMap((s) =>
+    s.roles.map((r) => AGENT_CONFIG[r].label)
   );
 
   parts.push(`# Your Role: ${config.label} Agent`);
-  if (remainingAgents.length > 0) {
+  if (peers.length > 0) {
+    parts.push(`You are running IN PARALLEL with: ${peers.join(', ')}`);
+  }
+  if (downstreamLabels.length > 0) {
     parts.push(
-      `After you complete your work, the following agents will run: ${remainingAgents.join(' → ')}`
+      `After this stage completes, the following agents will run: ${downstreamLabels.join(' → ')}`
     );
   } else {
-    parts.push('You are the final agent in the pipeline.');
+    parts.push('You are in the final stage of the pipeline.');
   }
+
+  parts.push('# Important: Output Language');
+  parts.push('Respond in the SAME language as the "# User Request" section above. Do NOT switch to English just because the template is in English.');
 
   return parts.join('\n\n');
 }
