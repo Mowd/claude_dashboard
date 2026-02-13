@@ -33,26 +33,9 @@
 ## 快速開始
 
 ```bash
-# 安裝依賴套件
-npm install
-
-# 啟動開發伺服器（前端 + 後端）
-npm run dev
-
-# 在瀏覽器中開啟
-open http://localhost:3000
-```
-
-## CLI 啟動器
-
-專案包含 `cdb` 啟動器，方便快速啟動：
-
-```bash
-# 全域連結（僅需執行一次）
-npm link
-
-# 啟動儀表板
-cdb
+npm install   # 安裝依賴套件
+npm link      # 全域連結 CLI（僅需一次）
+cdb           # 啟動儀表板
 ```
 
 ## 代理角色

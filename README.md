@@ -33,26 +33,9 @@ Multi-agent software development dashboard powered by Claude.
 ## Quick Start
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server (frontend + backend)
-npm run dev
-
-# Open in browser
-open http://localhost:3000
-```
-
-## CLI
-
-The project includes a `cdb` launcher for convenience:
-
-```bash
-# Link globally (one-time)
-npm link
-
-# Launch the dashboard
-cdb
+npm install   # Install dependencies
+npm link      # Link CLI globally (one-time)
+cdb           # Launch the dashboard
 ```
 
 ## Agent Roles
