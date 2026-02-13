@@ -32,11 +32,23 @@ Multi-agent software development dashboard powered by Claude.
 
 ## Quick Start
 
+### Install via npm
+
 ```bash
-npm install   # Install dependencies
-npm link      # Link CLI globally (one-time)
+npm install -g claude-dashboard
 cd /path/to/your/project
-cdb           # Launch the dashboard
+cdb
+```
+
+### Install from source
+
+```bash
+git clone https://github.com/Mowd/claude_dashboard.git
+cd claude_dashboard
+npm install
+npm link
+cd /path/to/your/project
+cdb
 ```
 
 ## Agent Roles

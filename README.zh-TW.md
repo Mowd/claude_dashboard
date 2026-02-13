@@ -32,11 +32,23 @@
 
 ## 快速開始
 
+### 透過 npm 安裝
+
 ```bash
-npm install   # 安裝依賴套件
-npm link      # 全域連結 CLI（僅需一次）
+npm install -g claude-dashboard
 cd /path/to/your/project
-cdb           # 啟動儀表板
+cdb
+```
+
+### 從原始碼安裝
+
+```bash
+git clone https://github.com/Mowd/claude_dashboard.git
+cd claude_dashboard
+npm install
+npm link
+cd /path/to/your/project
+cdb
 ```
 
 ## 代理角色
