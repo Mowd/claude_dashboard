@@ -55,6 +55,11 @@ describe('bin/cdb.ts (CLI entry point source)', () => {
     expect(content).toContain('HOST');
   });
 
+  it('should set NODE_ENV to production for npm-installed usage', () => {
+    const content = fs.readFileSync(sourcePath, 'utf-8');
+    expect(content).toContain("NODE_ENV: 'production'");
+  });
+
   it('should handle graceful shutdown', () => {
     const content = fs.readFileSync(sourcePath, 'utf-8');
     expect(content).toContain('SIGINT');

@@ -208,16 +208,24 @@ export async function initDb(): Promise<SqlJsWrapper> {
   }
   const dbPath = path.join(dataDir, 'dashboard.db');
 
-  // Locate the sql.js WASM file using dynamic root detection
-  // (works from both src/lib/db/ and dist/src/lib/db/)
+  // Locate the sql.js WASM file by walking up from project root
+  // (handles npm hoisting — sql.js may be in a parent node_modules/)
   const projectRoot = findProjectRoot(import.meta.url);
-  const wasmPath = path.join(
-    projectRoot,
-    'node_modules',
-    'sql.js',
-    'dist',
-    'sql-wasm.wasm',
-  );
+  let wasmPath = '';
+  let dir = projectRoot;
+  for (let i = 0; i < 10; i++) {
+    const candidate = path.join(dir, 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+    if (fs.existsSync(candidate)) {
+      wasmPath = candidate;
+      break;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  if (!wasmPath) {
+    throw new Error('sql-wasm.wasm not found. Ensure sql.js is installed.');
+  }
 
   const SQL = await initSqlJs({
     locateFile: () => wasmPath,

@@ -1,6 +1,6 @@
 {
   "name": "claude-dashboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "bin": {
@@ -8,12 +8,23 @@
   },
   "files": [
     "dist/",
-    ".next/standalone/",
+    ".next/server/",
     ".next/static/",
-    "public/",
+    ".next/app-build-manifest.json",
+    ".next/build-manifest.json",
+    ".next/package.json",
+    ".next/prerender-manifest.json",
+    ".next/react-loadable-manifest.json",
+    ".next/required-server-files.json",
+    ".next/routes-manifest.json",
+    ".next/app-path-routes-manifest.json",
+    ".next/export-marker.json",
+    ".next/images-manifest.json",
+    ".next/next-minimal-server.js.nft.json",
+    ".next/next-server.js.nft.json",
+    ".next/BUILD_ID",
     "prompts/",
-    "next.config.ts",
-    "package.json",
+    "next.config.mjs",
     "README.md"
   ],
   "scripts": {

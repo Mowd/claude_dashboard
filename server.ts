@@ -9,10 +9,12 @@ import { WorkflowEngine } from './src/lib/workflow/engine.ts';
 import { PtyManager } from './src/lib/terminal/pty-manager.ts';
 import { initDb, closeDb } from './src/lib/db/connection.ts';
 import * as queries from './src/lib/db/queries.ts';
+import { findProjectRoot } from './src/lib/find-root.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOST || 'localhost';
 const projectPath = process.env.PROJECT_PATH || process.cwd();
+const dashboardDir = findProjectRoot(import.meta.url);
 
 function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -42,8 +44,13 @@ async function main() {
     console.log(`[Server] Port ${requestedPort} in use, using ${port}`);
   }
 
+  const nextOptions: Record<string, unknown> = { dev, hostname, port, dir: dashboardDir };
+  if (!dev) {
+    // Production: inline config to skip next.config.mjs file loading
+    nextOptions.conf = { serverExternalPackages: ['sql.js', 'node-pty'] };
+  }
   // @ts-expect-error next CJS default export is callable but nodenext types don't reflect this
-  const app = next({ dev, hostname, port });
+  const app = next(nextOptions);
   const handle = app.getRequestHandler();
 
   await app.prepare();

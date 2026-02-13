@@ -134,6 +134,23 @@ describe('TypeScript Compilation Output', () => {
     });
   });
 
+  describe('server.ts production mode support', () => {
+    it('server.ts should use dir parameter for Next.js', () => {
+      const serverSrc = fs.readFileSync(path.join(projectRoot, 'server.ts'), 'utf-8');
+      expect(serverSrc).toContain('dir: dashboardDir');
+    });
+
+    it('server.ts should use inline conf in production mode', () => {
+      const serverSrc = fs.readFileSync(path.join(projectRoot, 'server.ts'), 'utf-8');
+      expect(serverSrc).toContain('nextOptions.conf');
+    });
+
+    it('server.ts should import findProjectRoot', () => {
+      const serverSrc = fs.readFileSync(path.join(projectRoot, 'server.ts'), 'utf-8');
+      expect(serverSrc).toContain('findProjectRoot');
+    });
+  });
+
   describe('compiled code should be valid JavaScript', () => {
     it('dist/server.js should not contain TypeScript-specific syntax', () => {
       const serverPath = path.join(distDir, 'server.js');
@@ -196,8 +213,25 @@ describe('package.json Configuration', () => {
       expect(pkg.files).toContain('prompts/');
     });
 
-    it('should include "public/" in files', () => {
-      expect(pkg.files).toContain('public/');
+    it('should include ".next/server/" in files', () => {
+      expect(pkg.files).toContain('.next/server/');
+    });
+
+    it('should include "next.config.mjs" in files', () => {
+      expect(pkg.files).toContain('next.config.mjs');
+    });
+
+    it('should include .next manifest files', () => {
+      expect(pkg.files).toContain('.next/build-manifest.json');
+      expect(pkg.files).toContain('.next/BUILD_ID');
+    });
+
+    it('should NOT include .next/standalone/ (not used)', () => {
+      expect(pkg.files).not.toContain('.next/standalone/');
+    });
+
+    it('should NOT include next.config.ts (replaced by .mjs)', () => {
+      expect(pkg.files).not.toContain('next.config.ts');
     });
   });
 

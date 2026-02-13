@@ -30,6 +30,7 @@ async function main() {
       PROJECT_PATH: projectPath,
       PORT: String(port),
       HOST: host,
+      NODE_ENV: 'production',
     },
     stdio: "inherit",
   });

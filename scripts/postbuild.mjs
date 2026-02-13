@@ -8,7 +8,7 @@
  * correctly when installed via `npm install -g`.
  */
 
-import { readFileSync, writeFileSync, chmodSync } from 'fs';
+import { readFileSync, writeFileSync, chmodSync, rmSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -36,4 +36,30 @@ try {
 } catch (err) {
   console.error('[postbuild] Error:', err.message);
   process.exit(1);
+}
+
+// --- Clean up dev-only artifacts from .next/static/ ---
+
+try {
+  // Remove hot-update files from .next/static/webpack/
+  const webpackDir = join(projectRoot, '.next', 'static', 'webpack');
+  if (existsSync(webpackDir)) {
+    const hotFiles = readdirSync(webpackDir).filter(f => f.includes('.hot-update.'));
+    for (const f of hotFiles) {
+      rmSync(join(webpackDir, f));
+    }
+    if (hotFiles.length > 0) {
+      console.log(`[postbuild] Removed ${hotFiles.length} hot-update file(s) from .next/static/webpack/`);
+    }
+  }
+
+  // Remove .next/static/development/ directory
+  const devDir = join(projectRoot, '.next', 'static', 'development');
+  if (existsSync(devDir)) {
+    rmSync(devDir, { recursive: true });
+    console.log('[postbuild] Removed .next/static/development/');
+  }
+} catch (err) {
+  // Non-fatal: warn but don't fail the build
+  console.warn('[postbuild] Warning: failed to clean dev artifacts:', err.message);
 }
