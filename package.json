@@ -1,17 +1,28 @@
 {
   "name": "claude-dashboard",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "bin": {
-    "cdb": "./bin/cdb.ts"
+    "cdb": "./dist/bin/cdb.js"
   },
+  "files": [
+    "dist/",
+    ".next/standalone/",
+    ".next/static/",
+    "public/",
+    "prompts/",
+    "next.config.ts",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "postinstall": "node -e \"import('node:child_process').then(m=>m.execSync('chmod +x node_modules/node-pty/prebuilds/*/spawn-helper')).catch(()=>{})\"",
     "dev": "node server.ts",
-    "build": "next build && tsc -p tsconfig.server.json",
+    "build": "next build && tsc -p tsconfig.server.json && node scripts/postbuild.mjs",
     "start": "node dist/server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.11.2",

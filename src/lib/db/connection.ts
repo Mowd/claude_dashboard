@@ -1,8 +1,8 @@
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { SCHEMA } from './schema.ts';
+import { findProjectRoot } from '../find-root.ts';
 
 // ---------------------------------------------------------------------------
 // Module-level state
@@ -208,9 +208,9 @@ export async function initDb(): Promise<SqlJsWrapper> {
   }
   const dbPath = path.join(dataDir, 'dashboard.db');
 
-  // Locate the sql.js WASM file
-  const currentDir = path.dirname(fileURLToPath(import.meta.url));
-  const projectRoot = path.resolve(currentDir, '..', '..', '..');
+  // Locate the sql.js WASM file using dynamic root detection
+  // (works from both src/lib/db/ and dist/src/lib/db/)
+  const projectRoot = findProjectRoot(import.meta.url);
   const wasmPath = path.join(
     projectRoot,
     'node_modules',

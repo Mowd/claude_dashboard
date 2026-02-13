@@ -2,23 +2,28 @@
 
 import { spawn } from "child_process";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { existsSync } from "fs";
+import { findProjectRoot } from "../src/lib/find-root.ts";
 
 async function main() {
   const projectPath = process.cwd();
   const port = parseInt(process.env.PORT || "3000", 10);
   const host = process.env.HOST || "localhost";
-  const dashboardDir = path.resolve(__dirname, "..");
+  const dashboardDir = findProjectRoot(import.meta.url);
+
+  // Determine the correct server entry point:
+  // - In compiled mode (npm install -g): use dist/server.js
+  // - In development mode (running .ts directly): use server.ts
+  const compiledServer = path.join(dashboardDir, "dist", "server.js");
+  const sourceServer = path.join(dashboardDir, "server.ts");
+  const serverEntry = existsSync(compiledServer) ? compiledServer : sourceServer;
 
   console.log(`\x1b[35m[Claude Dashboard]\x1b[0m Starting...`);
   console.log(`  Project: ${projectPath}`);
   console.log(`  Dashboard: http://${host}:${port}`);
   console.log();
 
-  const serverProcess = spawn("node", ["server.ts"], {
+  const serverProcess = spawn("node", [serverEntry], {
     cwd: dashboardDir,
     env: {
       ...process.env,

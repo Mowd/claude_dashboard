@@ -1,14 +1,15 @@
 import { type AgentRole, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole } from '../workflow/types.ts';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
+import { findProjectRoot } from '../find-root.ts';
 
 // ---------------------------------------------------------------------------
 // Prompt template loading
 // ---------------------------------------------------------------------------
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROMPTS_DIR = join(__dirname, '..', '..', '..', 'prompts');
+// Use dynamic root detection (works from both src/lib/agents/ and dist/src/lib/agents/)
+const PROJECT_ROOT = findProjectRoot(import.meta.url);
+const PROMPTS_DIR = join(PROJECT_ROOT, 'prompts');
 
 /**
  * Load a markdown prompt template from the prompts/ directory.
