@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "bin": {
-    "cdb": "./bin/cdb"
+    "cdb": "./bin/cdb.ts"
   },
   "scripts": {
-    "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true",
+    "postinstall": "node -e \"import('node:child_process').then(m=>m.execSync('chmod +x node_modules/node-pty/prebuilds/*/spawn-helper')).catch(()=>{})\"",
     "dev": "node server.ts",
     "build": "next build && tsc -p tsconfig.server.json",
     "start": "node dist/server.js",
@@ -18,7 +18,7 @@
     "autoprefixer": "^10.4.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "better-sqlite3": "^11.7.0",
+    "sql.js": "^1.12.0",
     "express": "^4.21.0",
     "lucide-react": "^0.468.0",
     "next": "^15.5.12",
@@ -42,7 +42,6 @@
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

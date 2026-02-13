@@ -7,7 +7,7 @@ import { ConnectionManager } from './src/lib/websocket/connection-manager.ts';
 import { setupWebSocketHandlers } from './src/lib/websocket/server.ts';
 import { WorkflowEngine } from './src/lib/workflow/engine.ts';
 import { PtyManager } from './src/lib/terminal/pty-manager.ts';
-import { getDb, closeDb } from './src/lib/db/connection.ts';
+import { initDb, closeDb } from './src/lib/db/connection.ts';
 import * as queries from './src/lib/db/queries.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -49,8 +49,8 @@ async function main() {
   await app.prepare();
 
   // Initialize database
-  getDb();
-  console.log('[DB] SQLite initialized');
+  await initDb();
+  console.log('[DB] sql.js initialized');
 
   // Initialize managers
   const connectionManager = new ConnectionManager();

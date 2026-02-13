@@ -13,7 +13,7 @@ export default defineConfig({
     pool: "forks",
     server: {
       deps: {
-        external: ["node-pty", "better-sqlite3"],
+        external: ["node-pty", "sql.js"],
       },
     },
   },

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-sqlite3", "node-pty"],
+  serverExternalPackages: ["sql.js", "node-pty"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
