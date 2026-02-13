@@ -21,11 +21,12 @@
 |------|------|
 | 前端 | Next.js 15、React 19、Tailwind CSS、Zustand |
 | 後端 | Express、WebSocket (ws)、node-pty |
-| 資料庫 | better-sqlite3 |
+| 資料庫 | sql.js (SQLite WASM) |
 | AI | Claude CLI |
 
 ## 前置需求
 
+- **平台** — Windows、macOS、Linux
 - **Node.js** 23.6+
 - **Claude CLI** 已安裝並設定完成（[文件](https://docs.anthropic.com/en/docs/claude-cli)）
 

@@ -21,11 +21,12 @@ Multi-agent software development dashboard powered by Claude.
 |-------|------------|
 | Frontend | Next.js 15, React 19, Tailwind CSS, Zustand |
 | Backend | Express, WebSocket (ws), node-pty |
-| Database | better-sqlite3 |
+| Database | sql.js (SQLite WASM) |
 | AI | Claude CLI |
 
 ## Prerequisites
 
+- **Platform** — Windows, macOS, Linux
 - **Node.js** 23.6+
 - **Claude CLI** installed and configured ([docs](https://docs.anthropic.com/en/docs/claude-cli))
 
