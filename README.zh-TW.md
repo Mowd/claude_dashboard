@@ -35,6 +35,7 @@
 ```bash
 npm install   # 安裝依賴套件
 npm link      # 全域連結 CLI（僅需一次）
+cd /path/to/your/project
 cdb           # 啟動儀表板
 ```
 

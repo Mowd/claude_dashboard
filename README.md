@@ -35,6 +35,7 @@ Multi-agent software development dashboard powered by Claude.
 ```bash
 npm install   # Install dependencies
 npm link      # Link CLI globally (one-time)
+cd /path/to/your/project
 cdb           # Launch the dashboard
 ```
 
