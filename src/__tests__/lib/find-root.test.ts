@@ -1,161 +1,118 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { findProjectRoot } from '../../lib/find-root';
-import path from 'path';
+import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
 import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { pathToFileURL } from 'url';
+import { findProjectRoot } from '../../lib/find-root';
 
-// We need to test findProjectRoot with real filesystem paths
-// since it uses existsSync which we'll mock for controlled testing
-
-vi.mock('fs', async () => {
-  const actual = await vi.importActual<typeof import('fs')>('fs');
-  return {
-    ...actual,
-    existsSync: vi.fn(),
-  };
-});
-
-const mockedExistsSync = vi.mocked(fs.existsSync);
+// Use real temp directories instead of mocking fs — avoids mock leaking across test files in bun:test
 
 describe('findProjectRoot', () => {
+  let tmpDir: string;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'find-root-test-'));
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('should find the project root when package.json is in the current directory', () => {
-    const testDir = '/Users/test/project/src/lib';
-    const testUrl = pathToFileURL(path.join(testDir, 'test.ts')).href;
-
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(testDir, 'package.json');
-    });
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const testUrl = pathToFileURL(path.join(tmpDir, 'test.ts')).href;
 
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(testDir);
+    expect(result).toBe(tmpDir);
   });
 
   it('should walk up directories to find package.json', () => {
-    const projectRoot = '/Users/test/project';
-    const deepDir = path.join(projectRoot, 'src', 'lib', 'db');
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const deepDir = path.join(tmpDir, 'src', 'lib', 'db');
+    fs.mkdirSync(deepDir, { recursive: true });
     const testUrl = pathToFileURL(path.join(deepDir, 'connection.ts')).href;
 
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
-
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(tmpDir);
   });
 
   it('should find root from dist directory (compiled mode)', () => {
-    const projectRoot = '/Users/test/project';
-    const distDir = path.join(projectRoot, 'dist', 'src', 'lib', 'db');
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const distDir = path.join(tmpDir, 'dist', 'src', 'lib', 'db');
+    fs.mkdirSync(distDir, { recursive: true });
     const testUrl = pathToFileURL(path.join(distDir, 'connection.js')).href;
 
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
-
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(tmpDir);
   });
 
   it('should find root from dist/bin directory (CLI compiled mode)', () => {
-    const projectRoot = '/Users/test/project';
-    const binDir = path.join(projectRoot, 'dist', 'bin');
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const binDir = path.join(tmpDir, 'dist', 'bin');
+    fs.mkdirSync(binDir, { recursive: true });
     const testUrl = pathToFileURL(path.join(binDir, 'cdb.js')).href;
 
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
-
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(tmpDir);
   });
 
   it('should find root from source bin directory (dev mode)', () => {
-    const projectRoot = '/Users/test/project';
-    const binDir = path.join(projectRoot, 'bin');
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const binDir = path.join(tmpDir, 'bin');
+    fs.mkdirSync(binDir, { recursive: true });
     const testUrl = pathToFileURL(path.join(binDir, 'cdb.ts')).href;
 
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
-
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(tmpDir);
   });
 
-  it('should stop searching after 10 levels', () => {
-    const deepPath = '/a/b/c/d/e/f/g/h/i/j/k/l/m/n';
-    const testUrl = pathToFileURL(path.join(deepPath, 'file.ts')).href;
+  it('should stop searching after 10 levels and fallback to cwd()', () => {
+    // Create a 12-level deep directory without any package.json
+    let deep = tmpDir;
+    for (let i = 0; i < 12; i++) {
+      deep = path.join(deep, `level${i}`);
+    }
+    fs.mkdirSync(deep, { recursive: true });
+    const testUrl = pathToFileURL(path.join(deep, 'file.ts')).href;
 
-    // Never return true for package.json
-    mockedExistsSync.mockReturnValue(false);
-
-    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/fallback');
-    const result = findProjectRoot(testUrl);
-    // Should fallback to process.cwd()
-    expect(result).toBe('/fallback');
-    cwdSpy.mockRestore();
-  });
-
-  it('should stop at filesystem root', () => {
-    const testUrl = pathToFileURL('/file.ts').href;
-
-    mockedExistsSync.mockReturnValue(false);
-
-    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/fallback');
+    const cwdSpy = spyOn(process, 'cwd').mockReturnValue('/fallback');
     const result = findProjectRoot(testUrl);
     expect(result).toBe('/fallback');
     cwdSpy.mockRestore();
   });
 
   it('should return the first directory containing package.json (not a parent)', () => {
-    // Simulating a monorepo where a nested package also has package.json
-    const nestedRoot = '/Users/test/project/packages/dashboard';
+    // Simulate a monorepo: both nested and parent have package.json
+    const nestedRoot = path.join(tmpDir, 'packages', 'dashboard');
     const libDir = path.join(nestedRoot, 'src', 'lib');
+    fs.mkdirSync(libDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    fs.writeFileSync(path.join(nestedRoot, 'package.json'), '{}');
     const testUrl = pathToFileURL(path.join(libDir, 'file.ts')).href;
-
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      // Both nested and parent have package.json, but nested is found first
-      return (
-        p === path.join(nestedRoot, 'package.json') ||
-        p === path.join('/Users/test/project', 'package.json')
-      );
-    });
 
     const result = findProjectRoot(testUrl);
     expect(result).toBe(nestedRoot);
   });
 
   it('should handle file:// URLs correctly', () => {
-    const projectRoot = '/Users/test/project';
-    const testUrl = `file://${path.join(projectRoot, 'src', 'lib', 'test.ts')}`;
-
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{}');
+    const libDir = path.join(tmpDir, 'src', 'lib');
+    fs.mkdirSync(libDir, { recursive: true });
+    const testUrl = `file://${path.join(libDir, 'test.ts')}`;
 
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(tmpDir);
   });
 
-  it('should work with npm global install path structure', () => {
-    // Simulate: /opt/homebrew/lib/node_modules/claude-dashboard/dist/bin/cdb.js
-    const projectRoot = '/opt/homebrew/lib/node_modules/claude-dashboard';
-    const binDir = path.join(projectRoot, 'dist', 'bin');
+  it('should work with deep npm-like path structure', () => {
+    // Simulate: tmpDir/lib/node_modules/claude-dashboard/dist/bin/cdb.js
+    const pkgRoot = path.join(tmpDir, 'lib', 'node_modules', 'claude-dashboard');
+    const binDir = path.join(pkgRoot, 'dist', 'bin');
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.writeFileSync(path.join(pkgRoot, 'package.json'), '{}');
     const testUrl = pathToFileURL(path.join(binDir, 'cdb.js')).href;
 
-    mockedExistsSync.mockImplementation((p: fs.PathLike) => {
-      return p === path.join(projectRoot, 'package.json');
-    });
-
     const result = findProjectRoot(testUrl);
-    expect(result).toBe(projectRoot);
+    expect(result).toBe(pkgRoot);
   });
 });

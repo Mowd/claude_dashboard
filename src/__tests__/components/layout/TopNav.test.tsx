@@ -29,14 +29,27 @@ mock.module("@/lib/workflow/types", () => ({
   AGENT_ORDER: ["PM", "RD", "UI", "TEST", "SEC"],
 }));
 
-// Mock UsageIndicator to avoid actual fetch calls
-mock.module("@/components/layout/UsageIndicator", () => ({
-  UsageIndicator: () => (
-    <div data-testid="usage-indicator">Usage Indicator Mock</div>
-  ),
-}));
-
 describe("TopNav component", () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    // Mock fetch so the real UsageIndicator doesn't make actual API calls
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          five_hour: { utilization: 10, resets_at: null },
+          seven_day: { utilization: 20, resets_at: null },
+          seven_day_sonnet: { utilization: 30, resets_at: null },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )) as typeof globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it("should render Claude Dashboard title", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
@@ -47,12 +60,11 @@ describe("TopNav component", () => {
 
   it("should include UsageIndicator component", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
-    render(<TopNav />);
+    const { container } = render(<TopNav />);
 
-    expect(screen.getByTestId("usage-indicator")).not.toBeNull();
-    expect(screen.getByTestId("usage-indicator").textContent).toBe(
-      "Usage Indicator Mock"
-    );
+    // Real UsageIndicator renders in loading state with aria-label
+    const usageEl = container.querySelector('[aria-label="Loading usage data"]');
+    expect(usageEl).not.toBeNull();
   });
 
   it("should maintain h-12 height class", async () => {
@@ -111,6 +123,25 @@ describe("TopNav component", () => {
 });
 
 describe("TopNav - with workflow status", () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          five_hour: { utilization: 10, resets_at: null },
+          seven_day: { utilization: 20, resets_at: null },
+          seven_day_sonnet: { utilization: 30, resets_at: null },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )) as typeof globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it("should not show status badge when status is pending", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
@@ -122,6 +153,25 @@ describe("TopNav - with workflow status", () => {
 });
 
 describe("TopNav - structural integrity for usage display", () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          five_hour: { utilization: 10, resets_at: null },
+          seven_day: { utilization: 20, resets_at: null },
+          seven_day_sonnet: { utilization: 30, resets_at: null },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )) as typeof globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it("should have UsageIndicator adjacent to the divider", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
@@ -134,7 +184,9 @@ describe("TopNav - structural integrity for usage display", () => {
         el.className?.includes("w-px")
       );
       const usageIndex = childArray.findIndex(
-        (el) => el.getAttribute("data-testid") === "usage-indicator"
+        (el) =>
+          el.getAttribute("aria-label")?.includes("usage") ||
+          el.getAttribute("aria-label")?.includes("Usage")
       );
 
       // Usage indicator should come right after the divider

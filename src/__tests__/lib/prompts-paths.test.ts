@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,7 +9,7 @@ import path from 'path';
  * hardcoded relative paths to locate the prompts/ directory.
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('prompts.ts source code validation', () => {
   const promptsPath = path.join(projectRoot, 'src', 'lib', 'agents', 'prompts.ts');

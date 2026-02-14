@@ -124,6 +124,11 @@ describe("GET /api/usage route", () => {
     // The function should still work since the mock was already set to return a token
     // This test validates the error handling structure exists
     expect(typeof routeModule.GET).toBe("function");
+
+    // Restore the original mock for subsequent tests
+    mock.module("@/lib/usage/get-token", () => ({
+      getClaudeOAuthToken: () => "mock-test-token",
+    }));
   });
 
   it("should handle Anthropic API returning unexpected JSON structure", async () => {

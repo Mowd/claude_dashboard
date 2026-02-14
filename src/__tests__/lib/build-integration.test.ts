@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,7 +12,7 @@ import path from 'path';
  * 4. All critical files are present in dist/
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 const distDir = path.join(projectRoot, 'dist');
 
 describe('TypeScript Compilation Output', () => {

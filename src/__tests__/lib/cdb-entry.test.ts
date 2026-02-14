@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,7 +9,7 @@ import path from 'path';
  * without actually spawning the server process.
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('bin/cdb.ts (CLI entry point source)', () => {
   const sourcePath = path.join(projectRoot, 'bin', 'cdb.ts');

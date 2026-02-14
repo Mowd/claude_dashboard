@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,7 +10,7 @@ import path from 'path';
  * ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING error.
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('npm publish readiness', () => {
   const pkg = JSON.parse(

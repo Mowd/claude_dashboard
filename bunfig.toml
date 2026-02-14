@@ -1,4 +1,2 @@
 [test]
-preload = ["./src/__tests__/setup-bun.ts"]
-
-[test.happy-dom]
+preload = ["./src/__tests__/happydom.ts"]

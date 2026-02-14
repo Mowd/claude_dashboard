@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
@@ -12,7 +12,7 @@ import { execSync } from 'child_process';
  * 3. The script is idempotent (won't duplicate shebangs)
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 const distBinPath = path.join(projectRoot, 'dist', 'bin', 'cdb.js');
 const postbuildScript = path.join(projectRoot, 'scripts', 'postbuild.mjs');
 

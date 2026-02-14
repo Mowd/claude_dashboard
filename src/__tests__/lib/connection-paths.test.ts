@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,7 +12,7 @@ import path from 'path';
  *   - dist/src/lib/db/connection.js (compiled/npm install)
  */
 
-const projectRoot = path.resolve(__dirname, '..', '..');
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('connection.ts source code validation', () => {
   const connectionPath = path.join(projectRoot, 'src', 'lib', 'db', 'connection.ts');
