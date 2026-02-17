@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { countWorkflows, listWorkflows } from "@/lib/db/queries";
+import { initDb } from "@/lib/db/connection";
 import type { WorkflowStatus } from "@/lib/workflow/types";
 
 export async function GET(request: NextRequest) {
+  await initDb();
   const searchParams = request.nextUrl.searchParams;
   const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
   const rawOffset = parseInt(searchParams.get("offset") || "0", 10);
