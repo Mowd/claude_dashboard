@@ -13,6 +13,7 @@ import {
   updateStepStatus,
   countWorkflows,
   cleanupWorkflows,
+  getWorkflowMetrics,
 } from "@/lib/db/queries";
 
 describe("SQLite persistence contract", () => {
@@ -132,5 +133,22 @@ describe("SQLite persistence contract", () => {
     if (!wf1Exists) {
       expect(allSteps.length).toBe(0);
     }
+  });
+
+  it("returns aggregate workflow metrics", () => {
+    createWorkflow("wf-m1", "Metrics One", "Prompt one", "/tmp/project");
+    createWorkflow("wf-m2", "Metrics Two", "Prompt two", "/tmp/project");
+    updateWorkflowStatus("wf-m1", "completed");
+    updateWorkflowStatus("wf-m2", "failed");
+
+    const steps = getStepsForWorkflow("wf-m1");
+    updateStepStatus(steps[0].id, { durationMs: 1500, tokensIn: 10, tokensOut: 20 });
+
+    const metrics = getWorkflowMetrics();
+    expect(metrics.workflowCount).toBeGreaterThanOrEqual(2);
+    expect(metrics.completedCount).toBeGreaterThanOrEqual(1);
+    expect(metrics.failedCount).toBeGreaterThanOrEqual(1);
+    expect(metrics.totalTokensIn).toBeGreaterThanOrEqual(10);
+    expect(metrics.totalTokensOut).toBeGreaterThanOrEqual(20);
   });
 });

@@ -37,15 +37,15 @@ This project will **keep SQLite** as the persistence layer.
    - Add optional cleanup policy (e.g., keep last N days / N workflows).
    - Provide safe manual cleanup command/action.
 
-8. **Feature wave 1 (high-value additions)**
+8. **Feature wave 1 (high-value additions)** ✅
    - Prompt templates/presets.
    - Run artifact summary (changed files / outputs summary).
 
-9. **Feature wave 2 (operator efficiency)**
+9. **Feature wave 2 (operator efficiency)** ✅
    - Partial retry UX (retry failed agent step only).
    - Cost/performance dashboard from persisted workflow stats.
 
-10. **Final polish + release checklist**
+10. **Final polish + release checklist** ✅
     - Regression pass (test + lint + manual smoke).
     - Update minimal docs only where strictly necessary.
 

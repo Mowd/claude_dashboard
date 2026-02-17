@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cleanupWorkflows } from "@/lib/db/queries";
+import { initDb } from "@/lib/db/connection";
 
 export async function POST(request: NextRequest) {
+  await initDb();
   const body = await request.json().catch(() => ({}));
 
   const rawKeepDays = Number(body?.keepDays ?? 0);

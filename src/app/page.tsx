@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { PipelineBar } from "@/components/pipeline/PipelineBar";
 import { AgentCardGrid } from "@/components/agent/AgentCardGrid";
@@ -13,6 +14,8 @@ import { useUiStore } from "@/stores/uiStore";
 
 export default function DashboardPage() {
   const { send } = useWebSocket();
+  const searchParams = useSearchParams();
+  const promptFromUrl = searchParams.get("prompt") || "";
   const workflowId = useWorkflowStore((s) => s.workflowId);
   const { bottomPanelHeight, terminalVisible, eventLogVisible } = useUiStore();
   const resizing = useRef(false);
@@ -77,6 +80,7 @@ export default function DashboardPage() {
         onPause={handlePause}
         onResume={handleResume}
         onCancel={handleCancel}
+        initialPrompt={promptFromUrl}
       />
       <PipelineBar />
 

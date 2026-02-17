@@ -31,6 +31,16 @@ interface WorkflowListResponse {
   offset: number;
 }
 
+interface WorkflowMetricsResponse {
+  workflowCount: number;
+  completedCount: number;
+  failedCount: number;
+  avgWorkflowDurationMs: number;
+  avgStepDurationMs: number;
+  totalTokensIn: number;
+  totalTokensOut: number;
+}
+
 export function HistoryTable() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +54,7 @@ export function HistoryTable() {
   const [keepLatest, setKeepLatest] = useState(300);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [metrics, setMetrics] = useState<WorkflowMetricsResponse | null>(null);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
@@ -60,14 +71,22 @@ export function HistoryTable() {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/workflows?${params.toString()}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<WorkflowListResponse>;
+    Promise.all([
+      fetch(`/api/workflows?${params.toString()}`),
+      fetch("/api/workflows/metrics"),
+    ])
+      .then(async ([listRes, metricsRes]) => {
+        if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
+        const listJson = (await listRes.json()) as WorkflowListResponse;
+        const metricsJson = metricsRes.ok
+          ? ((await metricsRes.json()) as WorkflowMetricsResponse)
+          : null;
+        return { listJson, metricsJson };
       })
-      .then((data) => {
-        setWorkflows(data.workflows || []);
-        setTotal(data.total || 0);
+      .then(({ listJson, metricsJson }) => {
+        setWorkflows(listJson.workflows || []);
+        setTotal(listJson.total || 0);
+        setMetrics(metricsJson);
         setLoading(false);
       })
       .catch((err) => {
@@ -153,6 +172,17 @@ export function HistoryTable() {
           Search
         </button>
       </div>
+
+      {metrics && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <Stat label="Workflows" value={String(metrics.workflowCount)} />
+          <Stat label="Completed / Failed" value={`${metrics.completedCount} / ${metrics.failedCount}`} />
+          <Stat label="Avg workflow" value={formatDuration(metrics.avgWorkflowDurationMs)} />
+          <Stat label="Avg step" value={formatDuration(metrics.avgStepDurationMs)} />
+          <Stat label="Tokens in" value={metrics.totalTokensIn.toLocaleString()} />
+          <Stat label="Tokens out" value={metrics.totalTokensOut.toLocaleString()} />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 border border-border rounded-md p-2">
         <span className="text-xs text-muted-foreground">Retention cleanup:</span>
@@ -252,8 +282,18 @@ export function HistoryTable() {
 }
 
 function formatDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "-";
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
   if (m > 0) return `${m}m ${s % 60}s`;
   return `${s}s`;
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border p-2">
+      <div className="text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
 }
