@@ -204,18 +204,24 @@ function handleClientMessage(
       const { terminalId } = msg.payload || {};
       if (!terminalId) break;
 
-      const ok = ptyManager.attach(terminalId, (data: string) => {
+      const result = ptyManager.attach(terminalId, (data: string) => {
         connectionManager.sendTo(clientId, {
           type: 'terminal:output',
           payload: { terminalId, data },
         });
       });
 
-      if (ok) {
+      if (result.ok) {
         connectionManager.sendTo(clientId, {
           type: 'terminal:created',
           payload: { terminalId },
         });
+        if (result.replay) {
+          connectionManager.sendTo(clientId, {
+            type: 'terminal:output',
+            payload: { terminalId, data: result.replay },
+          });
+        }
       } else {
         connectionManager.sendTo(clientId, {
           type: 'terminal:error',

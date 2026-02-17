@@ -38,7 +38,10 @@ interface PtySession {
   id: string;
   process: any; // IPty
   onData: (data: string) => void;
+  buffer: string;
 }
+
+const MAX_REPLAY_BUFFER = 200_000;
 
 export class PtyManager {
   private sessions: Map<string, PtySession> = new Map();
@@ -59,9 +62,13 @@ export class PtyManager {
       env: { ...process.env },
     });
 
-    const session: PtySession = { id, process: proc, onData };
+    const session: PtySession = { id, process: proc, onData, buffer: '' };
 
     proc.onData((data: string) => {
+      session.buffer += data;
+      if (session.buffer.length > MAX_REPLAY_BUFFER) {
+        session.buffer = session.buffer.slice(session.buffer.length - MAX_REPLAY_BUFFER);
+      }
       session.onData(data);
     });
 
@@ -73,11 +80,11 @@ export class PtyManager {
     return id;
   }
 
-  attach(id: string, onData: (data: string) => void): boolean {
+  attach(id: string, onData: (data: string) => void): { ok: boolean; replay?: string } {
     const session = this.sessions.get(id);
-    if (!session) return false;
+    if (!session) return { ok: false };
     session.onData = onData;
-    return true;
+    return { ok: true, replay: session.buffer };
   }
 
   write(id: string, data: string) {
