@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useWorkflowStore } from "@/stores/workflowStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { AGENT_ORDER } from "@/lib/workflow/types";
@@ -51,6 +52,12 @@ export function TopNav() {
         <h1 className="text-sm font-semibold tracking-tight whitespace-nowrap">
           Claude Dashboard
         </h1>
+        <Link
+          href="/history"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          History
+        </Link>
         {title && (
           <span className="text-xs text-muted-foreground truncate max-w-[300px]">
             {title}

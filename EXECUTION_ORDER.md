@@ -7,6 +7,11 @@ This project will **keep SQLite** as the persistence layer.
 1. **DB usage inventory (read/write map)**
    - Confirm all current SQLite touchpoints (engine writes, API reads, history UI dependencies).
    - Output: clear map of what must remain stable.
+   - Current map:
+     - Write path: `WorkflowEngine` -> `createWorkflow`, `updateWorkflowStatus`, `updateStepStatus`
+     - Read path (API): `GET /api/workflows` -> `listWorkflows`; `GET /api/workflows/[id]` -> `getWorkflow` + `getStepsForWorkflow`
+     - Read path (UI): `/history` page -> `HistoryTable` -> `/api/workflows`
+     - Server boot dependency: `server.ts` calls `initDb()` before workflow operations
 
 2. **Stabilize persistence contract**
    - Define and lock the minimum DB contract used by workflow engine + APIs.

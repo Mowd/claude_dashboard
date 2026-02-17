@@ -2,6 +2,14 @@ import { describe, it, expect, mock } from "bun:test";
 import { render } from "@testing-library/react";
 import React from "react";
 
+mock.module("next/link", () => ({
+  default: ({ href, children, className }: any) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+}));
+
 // Mock stores and child components to isolate TopNav structure tests
 mock.module("@/stores/workflowStore", () => ({
   useWorkflowStore: () => ({
@@ -55,6 +63,15 @@ describe("TopNav component", () => {
 
     const usageEl = container.querySelector('[aria-label="Claude Code usage metrics"]');
     expect(usageEl).not.toBeNull();
+  });
+
+  it("should include History navigation link", async () => {
+    const { TopNav } = await import("@/components/layout/TopNav");
+    const { container } = render(<TopNav />);
+
+    const historyLink = container.querySelector('a[href="/history"]');
+    expect(historyLink).not.toBeNull();
+    expect(historyLink?.textContent).toBe("History");
   });
 
   it("should maintain h-12 height class", async () => {
