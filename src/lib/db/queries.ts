@@ -305,3 +305,50 @@ export function updateStepStatus(id: string, updates: StepUpdateFields): void {
   const sql = `UPDATE agent_steps SET ${setClauses.join(', ')} WHERE id = @id`;
   db.prepare(sql).run(params);
 }
+
+export interface RetentionPolicy {
+  keepDays?: number;
+  keepLatest?: number;
+}
+
+export function cleanupWorkflows(policy: RetentionPolicy): { deleted: number } {
+  const db = getDb();
+
+  const keepDays = policy.keepDays ?? 0;
+  const keepLatest = policy.keepLatest ?? 0;
+
+  const idsToDelete = new Set<string>();
+
+  if (keepDays > 0) {
+    const oldRows = db
+      .prepare(
+        `SELECT id FROM workflows WHERE datetime(created_at) < datetime('now', @cutoff)`
+      )
+      .all({ cutoff: `-${keepDays} days` }) as Array<{ id: string }>;
+    for (const row of oldRows) idsToDelete.add(row.id);
+  }
+
+  if (keepLatest > 0) {
+    const overflowRows = db
+      .prepare(
+        `SELECT id FROM workflows ORDER BY datetime(created_at) DESC LIMIT -1 OFFSET @offset`
+      )
+      .all({ offset: keepLatest }) as Array<{ id: string }>;
+    for (const row of overflowRows) idsToDelete.add(row.id);
+  }
+
+  if (idsToDelete.size === 0) return { deleted: 0 };
+
+  const deleteStep = db.prepare('DELETE FROM agent_steps WHERE workflow_id = ?');
+  const deleteWorkflow = db.prepare('DELETE FROM workflows WHERE id = ?');
+
+  const txn = db.transaction(() => {
+    for (const id of idsToDelete) {
+      deleteStep.run(id);
+      deleteWorkflow.run(id);
+    }
+  });
+
+  txn();
+  return { deleted: idsToDelete.size };
+}
