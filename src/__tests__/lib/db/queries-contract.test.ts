@@ -11,6 +11,7 @@ import {
   updateWorkflowStatus,
   getStepsForWorkflow,
   updateStepStatus,
+  countWorkflows,
 } from "@/lib/db/queries";
 
 describe("SQLite persistence contract", () => {
@@ -93,5 +94,23 @@ describe("SQLite persistence contract", () => {
     expect(updated?.durationMs).toBe(1234);
     expect(updated?.tokensIn).toBe(111);
     expect(updated?.tokensOut).toBe(222);
+  });
+
+  it("supports filtered list/count by status and keyword", () => {
+    createWorkflow("wf-x", "Fix websocket reconnect", "Investigate reconnect bug", "/tmp/project");
+    createWorkflow("wf-y", "Build history detail", "Add detail page", "/tmp/project");
+
+    updateWorkflowStatus("wf-x", "failed");
+    updateWorkflowStatus("wf-y", "completed");
+
+    const failed = listWorkflows(50, 0, { status: "failed" });
+    expect(failed.length).toBe(1);
+    expect(failed[0].id).toBe("wf-x");
+
+    const searched = listWorkflows(50, 0, { q: "history" });
+    expect(searched.some((w) => w.id === "wf-y")).toBe(true);
+
+    const failedCount = countWorkflows({ status: "failed" });
+    expect(failedCount).toBe(1);
   });
 });

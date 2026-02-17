@@ -21,15 +21,15 @@ This project will **keep SQLite** as the persistence layer.
    - Add clear navigation entry to History page from main UI.
    - Ensure history list can be reached in one click from dashboard.
 
-4. **Workflow detail view (from history row)**
+4. **Workflow detail view (from history row)** ✅
    - Click a workflow row to open detail page/panel.
    - Show step outputs, status timeline, duration, token usage.
 
-5. **History query improvements**
+5. **History query improvements** ✅
    - Add pagination controls, status filter, text search (title/prompt).
    - Keep API query params bounded and validated.
 
-6. **Reliability hardening for SQLite writes**
+6. **Reliability hardening for SQLite writes** ✅
    - Audit transaction boundaries and error handling.
    - Ensure graceful handling of interrupted runs and partial failures.
 

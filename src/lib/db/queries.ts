@@ -130,13 +130,63 @@ export function getWorkflow(id: string): Workflow | null {
 /**
  * List workflows ordered by creation time (newest first).
  */
-export function listWorkflows(limit = 50, offset = 0): Workflow[] {
+export interface WorkflowListFilters {
+  status?: WorkflowStatus;
+  q?: string;
+}
+
+export function listWorkflows(
+  limit = 50,
+  offset = 0,
+  filters?: WorkflowListFilters,
+): Workflow[] {
   const db = getDb();
+
+  const where: string[] = [];
+  const params: Record<string, unknown> = {
+    limit,
+    offset,
+  };
+
+  if (filters?.status) {
+    where.push('status = @status');
+    params.status = filters.status;
+  }
+
+  if (filters?.q && filters.q.trim()) {
+    where.push('(title LIKE @q OR user_prompt LIKE @q)');
+    params.q = `%${filters.q.trim()}%`;
+  }
+
+  const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+
   const stmt = db.prepare(
-    'SELECT * FROM workflows ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    `SELECT * FROM workflows ${whereSql} ORDER BY created_at DESC LIMIT @limit OFFSET @offset`,
   );
-  const rows = stmt.all(limit, offset) as WorkflowRow[];
+  const rows = stmt.all(params) as WorkflowRow[];
   return rows.map(rowToWorkflow);
+}
+
+export function countWorkflows(filters?: WorkflowListFilters): number {
+  const db = getDb();
+
+  const where: string[] = [];
+  const params: Record<string, unknown> = {};
+
+  if (filters?.status) {
+    where.push('status = @status');
+    params.status = filters.status;
+  }
+
+  if (filters?.q && filters.q.trim()) {
+    where.push('(title LIKE @q OR user_prompt LIKE @q)');
+    params.q = `%${filters.q.trim()}%`;
+  }
+
+  const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+  const stmt = db.prepare(`SELECT COUNT(*) as count FROM workflows ${whereSql}`);
+  const row = stmt.get(params) as { count?: number } | undefined;
+  return row?.count ?? 0;
 }
 
 /**

@@ -153,16 +153,20 @@ class SqlJsWrapper {
     return () => {
       this.db.run('BEGIN');
       inTransaction = true;
+      let committed = false;
       try {
         const result = fn();
         this.db.run('COMMIT');
-        inTransaction = false;
+        committed = true;
         this.persist();
         return result;
       } catch (err) {
-        inTransaction = false;
-        this.db.run('ROLLBACK');
+        if (!committed) {
+          this.db.run('ROLLBACK');
+        }
         throw err;
+      } finally {
+        inTransaction = false;
       }
     };
   }
@@ -175,8 +179,18 @@ class SqlJsWrapper {
     const data = this.db.export();
     const buffer = Buffer.from(data);
     const tmpPath = `${this.dbPath}.tmp`;
-    fs.writeFileSync(tmpPath, buffer);
-    fs.renameSync(tmpPath, this.dbPath);
+
+    try {
+      fs.writeFileSync(tmpPath, buffer);
+      fs.renameSync(tmpPath, this.dbPath);
+    } catch (err) {
+      try {
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+      } catch {
+        // best effort cleanup
+      }
+      throw err;
+    }
   }
 
   close(): void {
