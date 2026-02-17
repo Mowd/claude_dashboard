@@ -65,9 +65,13 @@ describe("TopNav component", () => {
     expect(usageEl).not.toBeNull();
   });
 
-  it("should include History navigation link", async () => {
+  it("should include navigation links", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
+
+    const dashboardLink = container.querySelector('a[href="/"]');
+    expect(dashboardLink).not.toBeNull();
+    expect(dashboardLink?.textContent).toBe("Dashboard");
 
     const historyLink = container.querySelector('a[href="/history"]');
     expect(historyLink).not.toBeNull();
