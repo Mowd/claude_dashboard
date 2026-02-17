@@ -284,10 +284,17 @@ export function useWebSocket() {
     return () => {
       clearInterval(pingInterval);
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+
+      // Route transition unmount: proactively reset connection/terminal state
+      // so next mount always recreates a fresh terminal session.
+      setConnected(false);
+      setTerminalId(null);
+
       if (wsRef.current) wsRef.current.close();
       for (const buffer of buffersRef.current.values()) buffer.destroy();
+      buffersRef.current.clear();
     };
-  }, [connect, send]);
+  }, [connect, send, setConnected, setTerminalId]);
 
   return { send, wsRef };
 }
