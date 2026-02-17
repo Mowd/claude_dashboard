@@ -53,6 +53,12 @@ export function TopNav() {
           Claude Dashboard
         </h1>
         <Link
+          href="/"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Dashboard
+        </Link>
+        <Link
           href="/history"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
