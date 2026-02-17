@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useWorkflowStore } from "@/stores/workflowStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { AGENT_ORDER } from "@/lib/workflow/types";
+import { useUiStore } from "@/stores/uiStore";
 import { UsageIndicator } from "@/components/layout/UsageIndicator";
 
 function formatDuration(ms: number): string {
@@ -32,6 +33,7 @@ function LiveElapsed({ startedAt }: { startedAt: number }) {
 export function TopNav() {
   const { status, title, startedAt, completedAt } = useWorkflowStore();
   const agents = useAgentStore((s) => s.agents);
+  const { terminalVisible, eventLogVisible, toggleTerminal, toggleEventLog } = useUiStore();
 
   const completedCount = AGENT_ORDER.filter(
     (r) => agents[r].status === "completed"
@@ -73,7 +75,24 @@ export function TopNav() {
         <UsageIndicator />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleEventLog}
+          className={`text-[10px] px-2 py-1 rounded border ${eventLogVisible ? "border-emerald-500/40 text-emerald-300" : "border-border text-muted-foreground"}`}
+          title="Toggle event log panel"
+        >
+          Events
+        </button>
+        <button
+          type="button"
+          onClick={toggleTerminal}
+          className={`text-[10px] px-2 py-1 rounded border ${terminalVisible ? "border-emerald-500/40 text-emerald-300" : "border-border text-muted-foreground"}`}
+          title="Toggle terminal panel"
+        >
+          Terminal
+        </button>
+
         {status !== "pending" && (
           <>
             <span

@@ -48,6 +48,15 @@ mock.module("@/hooks/useUsage", () => ({
   }),
 }));
 
+mock.module("@/stores/uiStore", () => ({
+  useUiStore: () => ({
+    terminalVisible: true,
+    eventLogVisible: true,
+    toggleTerminal: () => {},
+    toggleEventLog: () => {},
+  }),
+}));
+
 describe("TopNav component", () => {
   it("should render Claude Dashboard title", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
@@ -76,6 +85,21 @@ describe("TopNav component", () => {
     const historyLink = container.querySelector('a[href="/history"]');
     expect(historyLink).not.toBeNull();
     expect(historyLink?.textContent).toBe("History");
+  });
+
+  it("should include panel toggle buttons", async () => {
+    const { TopNav } = await import("@/components/layout/TopNav");
+    const { container } = render(<TopNav />);
+
+    const eventsBtn = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Events"
+    );
+    const terminalBtn = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent === "Terminal"
+    );
+
+    expect(eventsBtn).not.toBeNull();
+    expect(terminalBtn).not.toBeNull();
   });
 
   it("should maintain h-12 height class", async () => {
