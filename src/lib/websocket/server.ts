@@ -201,7 +201,7 @@ function handleClientMessage(
     }
 
     case 'terminal:attach': {
-      const { terminalId } = msg.payload || {};
+      const { terminalId, refresh } = msg.payload || {};
       if (!terminalId) break;
 
       const result = ptyManager.attach(terminalId, (data: string) => {
@@ -221,6 +221,10 @@ function handleClientMessage(
             type: 'terminal:output',
             payload: { terminalId, data: result.replay },
           });
+        }
+        if (refresh) {
+          // Trigger a full-screen redraw for TUI apps (e.g. htop) after reattach.
+          ptyManager.write(terminalId, '\x0c');
         }
       } else {
         connectionManager.sendTo(clientId, {

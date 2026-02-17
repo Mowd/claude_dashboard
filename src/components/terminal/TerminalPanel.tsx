@@ -63,8 +63,17 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   // Attach to existing terminal session if we already have an id (e.g. route switch).
   // Declared after output listener setup so attach replay isn't dropped.
   useEffect(() => {
-    if (connected && terminalId) {
-      send({ type: "terminal:attach", payload: { terminalId } });
+    if (!connected || !terminalId) return;
+
+    send({ type: "terminal:attach", payload: { terminalId, refresh: true } });
+
+    // Force a redraw signal for full-screen TUIs (e.g. htop) after reattach.
+    if (lastSizeRef.current) {
+      const { cols, rows } = lastSizeRef.current;
+      const t = setTimeout(() => {
+        send({ type: "terminal:resize", payload: { terminalId, cols, rows } });
+      }, 80);
+      return () => clearTimeout(t);
     }
   }, [connected, terminalId, send]);
 
@@ -109,6 +118,7 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   );
 
   const pendingSizeRef = useRef<{ cols: number; rows: number } | null>(null);
+  const lastSizeRef = useRef<{ cols: number; rows: number } | null>(null);
 
   useEffect(() => {
     if (terminalId) setError(null);
@@ -116,30 +126,32 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
 
   const handleResize = useCallback(
     (cols: number, rows: number) => {
-      if (terminalId) {
+      lastSizeRef.current = { cols, rows };
+
+      if (connected && terminalId) {
         send({
           type: "terminal:resize",
           payload: { terminalId, cols, rows },
         });
         pendingSizeRef.current = null;
       } else {
-        // terminalId not yet available — stash for later
+        // terminal not fully ready — stash for later flush
         pendingSizeRef.current = { cols, rows };
       }
     },
-    [terminalId, send]
+    [connected, terminalId, send]
   );
 
-  // Flush pending resize once terminalId becomes available
+  // Flush pending resize once terminal is connected + available
   useEffect(() => {
-    if (terminalId && pendingSizeRef.current) {
+    if (connected && terminalId && pendingSizeRef.current) {
       send({
         type: "terminal:resize",
         payload: { terminalId, ...pendingSizeRef.current },
       });
       pendingSizeRef.current = null;
     }
-  }, [terminalId, send]);
+  }, [connected, terminalId, send]);
 
   if (!connected) {
     return (
