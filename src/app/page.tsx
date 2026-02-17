@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { PipelineBar } from "@/components/pipeline/PipelineBar";
 import { AgentCardGrid } from "@/components/agent/AgentCardGrid";
@@ -14,13 +13,17 @@ import { useUiStore } from "@/stores/uiStore";
 
 export default function DashboardPage() {
   const { send } = useWebSocket();
-  const searchParams = useSearchParams();
-  const promptFromUrl = searchParams.get("prompt") || "";
+  const [promptFromUrl, setPromptFromUrl] = useState("");
   const workflowId = useWorkflowStore((s) => s.workflowId);
   const { bottomPanelHeight, terminalVisible, eventLogVisible } = useUiStore();
   const resizing = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("prompt") || "";
+    setPromptFromUrl(raw);
+  }, []);
 
   const handleStart = useCallback(
     (prompt: string) => {
