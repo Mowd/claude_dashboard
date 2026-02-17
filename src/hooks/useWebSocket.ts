@@ -232,6 +232,9 @@ export function useWebSocket() {
     ws.onopen = () => {
       console.log("[WS] Connected");
       reconnectAttempt.current = 0;
+      // New WS session means old terminalId may be stale on server side.
+      // Force terminal recreation after reconnect.
+      setTerminalId(null);
       setConnected(true);
       addEvent({ type: "info", message: "Connected to server" });
     };
@@ -248,6 +251,7 @@ export function useWebSocket() {
     ws.onclose = () => {
       console.log("[WS] Disconnected");
       setConnected(false);
+      setTerminalId(null);
       wsRef.current = null;
 
       // Auto-reconnect with backoff
@@ -262,7 +266,7 @@ export function useWebSocket() {
     ws.onerror = (err) => {
       console.error("[WS] Error:", err);
     };
-  }, [handleMessage, setConnected, addEvent]);
+  }, [handleMessage, setConnected, setTerminalId, addEvent]);
 
   const send = useCallback((message: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
