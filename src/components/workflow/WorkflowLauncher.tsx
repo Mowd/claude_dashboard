@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type FormEvent } from "react";
+import { useState, useCallback, useEffect, type FormEvent } from "react";
 import { useWorkflowStore } from "@/stores/workflowStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useEventStore } from "@/stores/eventStore";
@@ -10,19 +10,46 @@ interface WorkflowLauncherProps {
   onPause: () => void;
   onResume: () => void;
   onCancel: () => void;
+  initialPrompt?: string;
 }
+
+const PROMPT_TEMPLATES = [
+  {
+    name: "Bugfix",
+    text: "Fix the reported bug with root-cause analysis, minimal patch, and regression test.",
+  },
+  {
+    name: "Feature",
+    text: "Implement this feature end-to-end with tests and concise docs updates.",
+  },
+  {
+    name: "Refactor",
+    text: "Refactor for readability/maintainability without behavior changes; keep tests green.",
+  },
+  {
+    name: "Performance",
+    text: "Profile bottlenecks, optimize critical path, and show before/after metrics.",
+  },
+];
 
 export function WorkflowLauncher({
   onStart,
   onPause,
   onResume,
   onCancel,
+  initialPrompt,
 }: WorkflowLauncherProps) {
   const [prompt, setPrompt] = useState("");
   const { status, workflowId } = useWorkflowStore();
   const resetAgents = useAgentStore((s) => s.resetAll);
   const clearEvents = useEventStore((s) => s.clear);
   const resetWorkflow = useWorkflowStore((s) => s.reset);
+
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      setPrompt(initialPrompt.trim());
+    }
+  }, [initialPrompt]);
 
   const handleSubmit = useCallback(
     (e: FormEvent) => {
@@ -36,12 +63,31 @@ export function WorkflowLauncher({
     [prompt, onStart, resetWorkflow, resetAgents, clearEvents]
   );
 
-  const isIdle = status === "pending" || status === "completed" || status === "failed" || status === "cancelled";
+  const isIdle =
+    status === "pending" ||
+    status === "completed" ||
+    status === "failed" ||
+    status === "cancelled";
   const isRunning = status === "running";
   const isPaused = status === "paused";
 
   return (
-    <div className="border-b border-border bg-card/50 px-4 py-3">
+    <div className="border-b border-border bg-card/50 px-4 py-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">Templates:</span>
+        {PROMPT_TEMPLATES.map((tpl) => (
+          <button
+            key={tpl.name}
+            type="button"
+            disabled={!isIdle}
+            onClick={() => setPrompt(tpl.text)}
+            className="h-7 px-2 rounded-md border border-border text-xs hover:bg-white/5 disabled:opacity-40"
+          >
+            {tpl.name}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"

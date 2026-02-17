@@ -313,6 +313,16 @@ export interface RetentionPolicy {
   keepLatest?: number;
 }
 
+export interface WorkflowMetrics {
+  workflowCount: number;
+  completedCount: number;
+  failedCount: number;
+  avgWorkflowDurationMs: number;
+  avgStepDurationMs: number;
+  totalTokensIn: number;
+  totalTokensOut: number;
+}
+
 export function cleanupWorkflows(policy: RetentionPolicy): { deleted: number } {
   const db = getDb();
 
@@ -353,4 +363,41 @@ export function cleanupWorkflows(policy: RetentionPolicy): { deleted: number } {
 
   txn();
   return { deleted: idsToDelete.size };
+}
+
+export function getWorkflowMetrics(): WorkflowMetrics {
+  const db = getDb();
+
+  const workflowRow = db.prepare(`
+    SELECT
+      COUNT(*) as workflow_count,
+      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_count,
+      AVG(
+        CASE
+          WHEN completed_at IS NOT NULL
+          THEN (julianday(completed_at) - julianday(created_at)) * 86400000
+          ELSE NULL
+        END
+      ) as avg_workflow_duration_ms
+    FROM workflows
+  `).get() as Record<string, number | null> | undefined;
+
+  const stepRow = db.prepare(`
+    SELECT
+      AVG(duration_ms) as avg_step_duration_ms,
+      SUM(COALESCE(tokens_in, 0)) as total_tokens_in,
+      SUM(COALESCE(tokens_out, 0)) as total_tokens_out
+    FROM agent_steps
+  `).get() as Record<string, number | null> | undefined;
+
+  return {
+    workflowCount: Number(workflowRow?.workflow_count ?? 0),
+    completedCount: Number(workflowRow?.completed_count ?? 0),
+    failedCount: Number(workflowRow?.failed_count ?? 0),
+    avgWorkflowDurationMs: Number(workflowRow?.avg_workflow_duration_ms ?? 0),
+    avgStepDurationMs: Number(stepRow?.avg_step_duration_ms ?? 0),
+    totalTokensIn: Number(stepRow?.total_tokens_in ?? 0),
+    totalTokensOut: Number(stepRow?.total_tokens_out ?? 0),
+  };
 }

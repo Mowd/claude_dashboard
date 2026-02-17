@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import type { AgentStep, Workflow } from "@/lib/workflow/types";
@@ -40,6 +40,11 @@ export default function WorkflowDetailPage() {
       });
   }, [id]);
 
+  const artifactPaths = useMemo(() => {
+    if (!data) return [];
+    return extractArtifactPaths(data.steps);
+  }, [data]);
+
   return (
     <DashboardShell>
       <div className="p-4 space-y-4 overflow-auto">
@@ -60,6 +65,29 @@ export default function WorkflowDetailPage() {
               <div><span className="text-muted-foreground">Status:</span> {data.workflow.status}</div>
               <div><span className="text-muted-foreground">Created:</span> {new Date(data.workflow.createdAt).toLocaleString()}</div>
               <div><span className="text-muted-foreground">Completed:</span> {data.workflow.completedAt ? new Date(data.workflow.completedAt).toLocaleString() : "-"}</div>
+              <div className="pt-1">
+                <Link
+                  href={`/?prompt=${encodeURIComponent(`Continue this previous task with fixes/improvements: ${data.workflow.userPrompt}`)}`}
+                  className="text-xs text-emerald-400 hover:underline"
+                >
+                  Retry entire workflow as new run
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-md border border-border p-3">
+              <div className="text-sm font-medium mb-2">Run artifact summary (detected file paths)</div>
+              {artifactPaths.length === 0 ? (
+                <div className="text-xs text-muted-foreground">No file paths detected from agent outputs.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {artifactPaths.map((p) => (
+                    <span key={p} className="text-xs rounded border border-border px-2 py-1 text-muted-foreground">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -72,6 +100,14 @@ export default function WorkflowDetailPage() {
                       {step.tokensIn ?? "-"} out: {step.tokensOut ?? "-"}
                     </div>
                   </div>
+                  <div className="mb-2">
+                    <Link
+                      href={`/?prompt=${encodeURIComponent(`Retry from ${step.role.toUpperCase()} stage. Original task: ${data.workflow.userPrompt}\n\nPrevious ${step.role.toUpperCase()} output:\n${step.output || "(no output)"}`)}`}
+                      className="text-xs text-emerald-400 hover:underline"
+                    >
+                      Retry from this step as new run
+                    </Link>
+                  </div>
                   <pre className="text-xs whitespace-pre-wrap break-words text-muted-foreground bg-black/20 rounded p-2 max-h-72 overflow-auto">
                     {step.output || "(no output)"}
                   </pre>
@@ -83,4 +119,22 @@ export default function WorkflowDetailPage() {
       </div>
     </DashboardShell>
   );
+}
+
+function extractArtifactPaths(steps: AgentStep[]): string[] {
+  const pathRegex = /(?:^|\s)([\w./-]+\.(?:ts|tsx|js|jsx|json|md|yml|yaml|css|sql))/g;
+  const found = new Set<string>();
+
+  for (const step of steps) {
+    const output = step.output || "";
+    let match: RegExpExecArray | null;
+    while ((match = pathRegex.exec(output)) !== null) {
+      const candidate = match[1].trim();
+      if (candidate.includes("/") || candidate.includes(".")) {
+        found.add(candidate);
+      }
+    }
+  }
+
+  return Array.from(found).slice(0, 30);
 }
