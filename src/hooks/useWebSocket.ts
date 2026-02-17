@@ -232,9 +232,6 @@ export function useWebSocket() {
     ws.onopen = () => {
       console.log("[WS] Connected");
       reconnectAttempt.current = 0;
-      // New WS session means old terminalId may be stale on server side.
-      // Force terminal recreation after reconnect.
-      setTerminalId(null);
       setConnected(true);
       addEvent({ type: "info", message: "Connected to server" });
     };
@@ -251,7 +248,6 @@ export function useWebSocket() {
     ws.onclose = () => {
       console.log("[WS] Disconnected");
       setConnected(false);
-      setTerminalId(null);
       wsRef.current = null;
 
       // Auto-reconnect with backoff
@@ -266,7 +262,7 @@ export function useWebSocket() {
     ws.onerror = (err) => {
       console.error("[WS] Error:", err);
     };
-  }, [handleMessage, setConnected, setTerminalId, addEvent]);
+  }, [handleMessage, setConnected, addEvent]);
 
   const send = useCallback((message: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -285,16 +281,15 @@ export function useWebSocket() {
       clearInterval(pingInterval);
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
 
-      // Route transition unmount: proactively reset connection/terminal state
-      // so next mount always recreates a fresh terminal session.
+      // Route transition unmount: close socket; terminal id is intentionally
+      // preserved so next dashboard mount can attach back to same PTY session.
       setConnected(false);
-      setTerminalId(null);
 
       if (wsRef.current) wsRef.current.close();
       for (const buffer of buffersRef.current.values()) buffer.destroy();
       buffersRef.current.clear();
     };
-  }, [connect, send, setConnected, setTerminalId]);
+  }, [connect, send, setConnected]);
 
   return { send, wsRef };
 }

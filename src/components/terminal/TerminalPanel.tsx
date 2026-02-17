@@ -18,13 +18,20 @@ interface TerminalPanelProps {
 }
 
 export function TerminalPanel({ send }: TerminalPanelProps) {
-  const { terminalId, connected } = useTerminalStore();
+  const { terminalId, connected, setTerminalId } = useTerminalStore();
   const termRef = useRef<XTermHandle>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Track terminalId via ref to avoid listener re-registration gaps
   const terminalIdRef = useRef<string | null>(terminalId);
   useEffect(() => { terminalIdRef.current = terminalId; }, [terminalId]);
+
+  // Attach to existing terminal session if we already have an id (e.g. route switch).
+  useEffect(() => {
+    if (connected && terminalId) {
+      send({ type: "terminal:attach", payload: { terminalId } });
+    }
+  }, [connected, terminalId, send]);
 
   // Create (or recover) terminal session.
   // Retry periodically while connected but terminalId is still missing.
@@ -57,11 +64,15 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   // Listen for terminal errors via CustomEvent
   useEffect(() => {
     const handler = (e: CustomEvent) => {
-      setError(e.detail.error);
+      const msg = String(e.detail.error || "");
+      setError(msg);
+      if (msg.toLowerCase().includes("session not found")) {
+        setTerminalId(null);
+      }
     };
     window.addEventListener("terminal:error" as any, handler);
     return () => window.removeEventListener("terminal:error" as any, handler);
-  }, []);
+  }, [setTerminalId]);
 
   const handleData = useCallback(
     (data: string) => {

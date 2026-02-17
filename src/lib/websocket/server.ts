@@ -200,6 +200,31 @@ function handleClientMessage(
       break;
     }
 
+    case 'terminal:attach': {
+      const { terminalId } = msg.payload || {};
+      if (!terminalId) break;
+
+      const ok = ptyManager.attach(terminalId, (data: string) => {
+        connectionManager.sendTo(clientId, {
+          type: 'terminal:output',
+          payload: { terminalId, data },
+        });
+      });
+
+      if (ok) {
+        connectionManager.sendTo(clientId, {
+          type: 'terminal:created',
+          payload: { terminalId },
+        });
+      } else {
+        connectionManager.sendTo(clientId, {
+          type: 'terminal:error',
+          payload: { error: 'Terminal session not found; create a new one.' },
+        });
+      }
+      break;
+    }
+
     case 'terminal:input': {
       const { terminalId, data } = msg.payload || {};
       if (terminalId && data != null) {

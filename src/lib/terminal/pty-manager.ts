@@ -59,16 +59,25 @@ export class PtyManager {
       env: { ...process.env },
     });
 
+    const session: PtySession = { id, process: proc, onData };
+
     proc.onData((data: string) => {
-      onData(data);
+      session.onData(data);
     });
 
     proc.onExit(() => {
       this.sessions.delete(id);
     });
 
-    this.sessions.set(id, { id, process: proc, onData });
+    this.sessions.set(id, session);
     return id;
+  }
+
+  attach(id: string, onData: (data: string) => void): boolean {
+    const session = this.sessions.get(id);
+    if (!session) return false;
+    session.onData = onData;
+    return true;
   }
 
   write(id: string, data: string) {
