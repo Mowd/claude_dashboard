@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, mock } from "bun:test";
+import { render } from "@testing-library/react";
 import React from "react";
 
-// Mock the stores and UsageIndicator to isolate TopNav testing
+// Mock stores and child components to isolate TopNav structure tests
 mock.module("@/stores/workflowStore", () => ({
   useWorkflowStore: () => ({
     status: "pending",
@@ -29,27 +29,18 @@ mock.module("@/lib/workflow/types", () => ({
   AGENT_ORDER: ["PM", "RD", "UI", "TEST", "SEC"],
 }));
 
+mock.module("@/hooks/useUsage", () => ({
+  useUsage: () => ({
+    loading: false,
+    data: {
+      five_hour: { utilization: 10, resets_at: null },
+      seven_day: { utilization: 20, resets_at: null },
+      seven_day_sonnet: { utilization: 30, resets_at: null },
+    },
+  }),
+}));
+
 describe("TopNav component", () => {
-  let originalFetch: typeof globalThis.fetch;
-
-  beforeEach(() => {
-    originalFetch = globalThis.fetch;
-    // Mock fetch so the real UsageIndicator doesn't make actual API calls
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          five_hour: { utilization: 10, resets_at: null },
-          seven_day: { utilization: 20, resets_at: null },
-          seven_day_sonnet: { utilization: 30, resets_at: null },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )) as typeof globalThis.fetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it("should render Claude Dashboard title", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
@@ -62,8 +53,7 @@ describe("TopNav component", () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
 
-    // Real UsageIndicator renders in loading state with aria-label
-    const usageEl = container.querySelector('[aria-label="Loading usage data"]');
+    const usageEl = container.querySelector('[aria-label="Claude Code usage metrics"]');
     expect(usageEl).not.toBeNull();
   });
 
@@ -96,10 +86,8 @@ describe("TopNav component", () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
 
-    // Find the divider (w-px bg-border element)
     const divider = container.querySelector(".w-px.bg-border");
     expect(divider).not.toBeNull();
-    // Should be hidden on small screens
     expect(divider?.className).toContain("hidden");
     expect(divider?.className).toContain("md:block");
   });
@@ -123,55 +111,16 @@ describe("TopNav component", () => {
 });
 
 describe("TopNav - with workflow status", () => {
-  let originalFetch: typeof globalThis.fetch;
-
-  beforeEach(() => {
-    originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          five_hour: { utilization: 10, resets_at: null },
-          seven_day: { utilization: 20, resets_at: null },
-          seven_day_sonnet: { utilization: 30, resets_at: null },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )) as typeof globalThis.fetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it("should not show status badge when status is pending", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
 
-    // When status is "pending", the right section should not show status
     const statusBadges = container.querySelectorAll(".rounded-full");
     expect(statusBadges.length).toBe(0);
   });
 });
 
 describe("TopNav - structural integrity for usage display", () => {
-  let originalFetch: typeof globalThis.fetch;
-
-  beforeEach(() => {
-    originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          five_hour: { utilization: 10, resets_at: null },
-          seven_day: { utilization: 20, resets_at: null },
-          seven_day_sonnet: { utilization: 30, resets_at: null },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )) as typeof globalThis.fetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it("should have UsageIndicator adjacent to the divider", async () => {
     const { TopNav } = await import("@/components/layout/TopNav");
     const { container } = render(<TopNav />);
@@ -183,13 +132,13 @@ describe("TopNav - structural integrity for usage display", () => {
       const dividerIndex = childArray.findIndex((el) =>
         el.className?.includes("w-px")
       );
-      const usageIndex = childArray.findIndex(
-        (el) =>
+      const usageIndex = childArray.findIndex((el) =>
+        Boolean(
           el.getAttribute("aria-label")?.includes("usage") ||
-          el.getAttribute("aria-label")?.includes("Usage")
+            el.getAttribute("aria-label")?.includes("Usage")
+        )
       );
 
-      // Usage indicator should come right after the divider
       if (dividerIndex >= 0 && usageIndex >= 0) {
         expect(usageIndex).toBe(dividerIndex + 1);
       }
