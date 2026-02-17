@@ -33,7 +33,7 @@ This project will **keep SQLite** as the persistence layer.
    - Audit transaction boundaries and error handling.
    - Ensure graceful handling of interrupted runs and partial failures.
 
-7. **Data retention controls**
+7. **Data retention controls** ✅
    - Add optional cleanup policy (e.g., keep last N days / N workflows).
    - Provide safe manual cleanup command/action.
 

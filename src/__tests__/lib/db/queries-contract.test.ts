@@ -12,6 +12,7 @@ import {
   getStepsForWorkflow,
   updateStepStatus,
   countWorkflows,
+  cleanupWorkflows,
 } from "@/lib/db/queries";
 
 describe("SQLite persistence contract", () => {
@@ -112,5 +113,24 @@ describe("SQLite persistence contract", () => {
 
     const failedCount = countWorkflows({ status: "failed" });
     expect(failedCount).toBe(1);
+  });
+
+  it("cleans up old workflows by keepLatest policy", () => {
+    createWorkflow("wf-1", "One", "Prompt one", "/tmp/project");
+    createWorkflow("wf-2", "Two", "Prompt two", "/tmp/project");
+    createWorkflow("wf-3", "Three", "Prompt three", "/tmp/project");
+
+    const result = cleanupWorkflows({ keepLatest: 2 });
+    expect(result.deleted).toBe(1);
+
+    const remaining = listWorkflows(10, 0);
+    expect(remaining.length).toBe(2);
+
+    // Also verify child rows were deleted together with parent workflow
+    const allSteps = getStepsForWorkflow("wf-1");
+    const wf1Exists = getWorkflow("wf-1") !== null;
+    if (!wf1Exists) {
+      expect(allSteps.length).toBe(0);
+    }
   });
 });

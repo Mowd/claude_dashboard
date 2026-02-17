@@ -40,6 +40,10 @@ export function HistoryTable() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [keepDays, setKeepDays] = useState(30);
+  const [keepLatest, setKeepLatest] = useState(300);
+  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
@@ -70,11 +74,36 @@ export function HistoryTable() {
         setError(err.message || "Failed to load workflows");
         setLoading(false);
       });
-  }, [page, query, status]);
+  }, [page, query, status, refreshTick]);
 
   const handleApplySearch = () => {
     setPage(1);
     setQuery(queryInput);
+  };
+
+  const handleCleanup = async () => {
+    const ok = window.confirm(
+      `Cleanup history with policy: keep ${keepDays} days OR latest ${keepLatest} workflows?`,
+    );
+    if (!ok) return;
+
+    setCleanupMessage(null);
+
+    const res = await fetch("/api/workflows/cleanup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keepDays, keepLatest }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      setCleanupMessage(json?.error || "Cleanup failed");
+      return;
+    }
+
+    setCleanupMessage(`Cleanup complete: deleted ${json.deleted} workflows.`);
+    setPage(1);
+    setRefreshTick((n) => n + 1);
   };
 
   if (loading) {
@@ -123,6 +152,37 @@ export function HistoryTable() {
         >
           Search
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border border-border rounded-md p-2">
+        <span className="text-xs text-muted-foreground">Retention cleanup:</span>
+        <label className="text-xs text-muted-foreground flex items-center gap-1">
+          keep days
+          <input
+            type="number"
+            min={1}
+            value={keepDays}
+            onChange={(e) => setKeepDays(Math.max(1, Number(e.target.value) || 1))}
+            className="h-7 w-20 rounded border border-border bg-background px-2"
+          />
+        </label>
+        <label className="text-xs text-muted-foreground flex items-center gap-1">
+          keep latest
+          <input
+            type="number"
+            min={1}
+            value={keepLatest}
+            onChange={(e) => setKeepLatest(Math.max(1, Number(e.target.value) || 1))}
+            className="h-7 w-24 rounded border border-border bg-background px-2"
+          />
+        </label>
+        <button
+          onClick={handleCleanup}
+          className="h-8 rounded-md border border-border px-3 text-xs hover:bg-white/5"
+        >
+          Run Cleanup
+        </button>
+        {cleanupMessage && <span className="text-xs text-muted-foreground">{cleanupMessage}</span>}
       </div>
 
       {workflows.length === 0 ? (
