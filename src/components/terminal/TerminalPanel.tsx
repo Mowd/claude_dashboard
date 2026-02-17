@@ -26,11 +26,19 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   const terminalIdRef = useRef<string | null>(terminalId);
   useEffect(() => { terminalIdRef.current = terminalId; }, [terminalId]);
 
-  // Create terminal on mount
+  // Create (or recover) terminal session.
+  // Retry periodically while connected but terminalId is still missing.
   useEffect(() => {
-    if (connected && !terminalId) {
+    if (!connected || terminalId) return;
+
+    const create = () => {
       send({ type: "terminal:create", payload: { projectPath: "" } });
-    }
+    };
+
+    create();
+    const retry = setInterval(create, 1500);
+
+    return () => clearInterval(retry);
   }, [connected, terminalId, send]);
 
   // Listen for terminal output via CustomEvent — registered once, uses ref for terminalId.
@@ -68,6 +76,10 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   );
 
   const pendingSizeRef = useRef<{ cols: number; rows: number } | null>(null);
+
+  useEffect(() => {
+    if (terminalId) setError(null);
+  }, [terminalId]);
 
   const handleResize = useCallback(
     (cols: number, rows: number) => {
