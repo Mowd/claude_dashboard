@@ -185,7 +185,9 @@ export function countWorkflows(filters?: WorkflowListFilters): number {
 
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const stmt = db.prepare(`SELECT COUNT(*) as count FROM workflows ${whereSql}`);
-  const row = stmt.get(params) as { count?: number } | undefined;
+  const row = (
+    Object.keys(params).length > 0 ? stmt.get(params) : stmt.get()
+  ) as { count?: number } | undefined;
   return row?.count ?? 0;
 }
 
