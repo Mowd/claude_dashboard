@@ -21,12 +21,47 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   const { terminalId, connected, setTerminalId } = useTerminalStore();
   const termRef = useRef<XTermHandle>(null);
   const [error, setError] = useState<string | null>(null);
+  const pendingOutputRef = useRef<string[]>([]);
 
   // Track terminalId via ref to avoid listener re-registration gaps
   const terminalIdRef = useRef<string | null>(terminalId);
   useEffect(() => { terminalIdRef.current = terminalId; }, [terminalId]);
 
+  // Listen for terminal output via CustomEvent — registered once, uses ref for terminalId.
+  // Accept output when terminalIdRef is still null (terminal initializing) to avoid
+  // dropping early output that arrives before the ref is synced from the store.
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (!terminalIdRef.current || e.detail.terminalId === terminalIdRef.current) {
+        const data = String(e.detail.data || "");
+        if (termRef.current) {
+          termRef.current.write(data);
+        } else {
+          pendingOutputRef.current.push(data);
+          if (pendingOutputRef.current.length > 200) {
+            pendingOutputRef.current = pendingOutputRef.current.slice(-200);
+          }
+        }
+      }
+    };
+    window.addEventListener("terminal:output" as any, handler);
+    return () => window.removeEventListener("terminal:output" as any, handler);
+  }, []);
+
+  // Flush buffered output once xterm ref is ready.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!termRef.current || pendingOutputRef.current.length === 0) return;
+      for (const chunk of pendingOutputRef.current) {
+        termRef.current.write(chunk);
+      }
+      pendingOutputRef.current = [];
+    }, 120);
+    return () => clearInterval(timer);
+  }, []);
+
   // Attach to existing terminal session if we already have an id (e.g. route switch).
+  // Declared after output listener setup so attach replay isn't dropped.
   useEffect(() => {
     if (connected && terminalId) {
       send({ type: "terminal:attach", payload: { terminalId } });
@@ -47,19 +82,6 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
 
     return () => clearInterval(retry);
   }, [connected, terminalId, send]);
-
-  // Listen for terminal output via CustomEvent — registered once, uses ref for terminalId.
-  // Accept output when terminalIdRef is still null (terminal initializing) to avoid
-  // dropping early output that arrives before the ref is synced from the store.
-  useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (!terminalIdRef.current || e.detail.terminalId === terminalIdRef.current) {
-        termRef.current?.write(e.detail.data);
-      }
-    };
-    window.addEventListener("terminal:output" as any, handler);
-    return () => window.removeEventListener("terminal:output" as any, handler);
-  }, []);
 
   // Listen for terminal errors via CustomEvent
   useEffect(() => {
