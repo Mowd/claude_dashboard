@@ -43,7 +43,7 @@ interface WorkflowMetricsResponse {
 }
 
 export function HistoryTable() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export function HistoryTable() {
 
   const handleCleanup = async () => {
     const ok = window.confirm(
-      `Cleanup history with policy: keep ${keepDays} days OR latest ${keepLatest} workflows?`,
+      t("history.cleanup.confirm", { keepDays, keepLatest }),
     );
     if (!ok) return;
 
@@ -118,11 +118,11 @@ export function HistoryTable() {
 
     const json = await res.json();
     if (!res.ok) {
-      setCleanupMessage(json?.error || "Cleanup failed");
+      setCleanupMessage(json?.error || t("history.cleanup.failed"));
       return;
     }
 
-    setCleanupMessage(`Cleanup complete: deleted ${json.deleted} workflows.`);
+    setCleanupMessage(t("history.cleanup.success", { count: json.deleted }));
     setPage(1);
     setRefreshTick((n) => n + 1);
   };
@@ -138,7 +138,7 @@ export function HistoryTable() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-8 text-sm text-red-400">
-        Failed to load workflows: {error}
+        {t("history.loadFailed", { error })}
       </div>
     );
   }
@@ -156,7 +156,7 @@ export function HistoryTable() {
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s === "all" ? t("history.filters.allStatuses") : s}
+              {s === "all" ? t("history.filters.allStatuses") : t(`status.${s}`)}
             </option>
           ))}
         </select>
@@ -177,12 +177,15 @@ export function HistoryTable() {
 
       {metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <Stat label="Workflows" value={String(metrics.workflowCount)} />
-          <Stat label="Completed / Failed" value={`${metrics.completedCount} / ${metrics.failedCount}`} />
-          <Stat label="Avg workflow" value={formatDuration(metrics.avgWorkflowDurationMs)} />
-          <Stat label="Avg step" value={formatDuration(metrics.avgStepDurationMs)} />
-          <Stat label="Tokens in" value={metrics.totalTokensIn.toLocaleString()} />
-          <Stat label="Tokens out" value={metrics.totalTokensOut.toLocaleString()} />
+          <Stat label={t("history.metrics.workflows")} value={String(metrics.workflowCount)} />
+          <Stat
+            label={t("history.metrics.completedFailed")}
+            value={`${metrics.completedCount} / ${metrics.failedCount}`}
+          />
+          <Stat label={t("history.metrics.avgWorkflow")} value={formatDuration(metrics.avgWorkflowDurationMs)} />
+          <Stat label={t("history.metrics.avgStep")} value={formatDuration(metrics.avgStepDurationMs)} />
+          <Stat label={t("history.metrics.tokensIn")} value={metrics.totalTokensIn.toLocaleString()} />
+          <Stat label={t("history.metrics.tokensOut")} value={metrics.totalTokensOut.toLocaleString()} />
         </div>
       )}
 
@@ -240,9 +243,9 @@ export function HistoryTable() {
                       {w.title}
                     </Link>
                   </td>
-                  <td className={`py-2 px-3 ${statusColors[w.status] || ""}`}>{w.status}</td>
+                  <td className={`py-2 px-3 ${statusColors[w.status] || ""}`}>{t(`status.${w.status}`)}</td>
                   <td className="py-2 px-3 text-muted-foreground">
-                    {new Date(w.createdAt).toLocaleString()}
+                    {new Date(w.createdAt).toLocaleString(locale)}
                   </td>
                   <td className="py-2 px-3 text-muted-foreground">
                     {w.completedAt
@@ -260,7 +263,7 @@ export function HistoryTable() {
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          {total} total · page {page}/{totalPages}
+          {t("history.pagination.summary", { total, page, totalPages })}
         </span>
         <div className="flex items-center gap-2">
           <button

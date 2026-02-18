@@ -15,7 +15,7 @@ interface WorkflowDetailResponse {
 export default function WorkflowDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [data, setData] = useState<WorkflowDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,9 +64,9 @@ export default function WorkflowDetailPage() {
           <>
             <div className="rounded-md border border-border p-3 text-sm space-y-1">
               <div><span className="text-muted-foreground">{t("historyDetail.meta.title")}</span> {data.workflow.title}</div>
-              <div><span className="text-muted-foreground">{t("historyDetail.meta.status")}</span> {data.workflow.status}</div>
-              <div><span className="text-muted-foreground">{t("historyDetail.meta.created")}</span> {new Date(data.workflow.createdAt).toLocaleString()}</div>
-              <div><span className="text-muted-foreground">{t("historyDetail.meta.completed")}</span> {data.workflow.completedAt ? new Date(data.workflow.completedAt).toLocaleString() : "-"}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.status")}</span> {t(`status.${data.workflow.status}`)}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.created")}</span> {new Date(data.workflow.createdAt).toLocaleString(locale)}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.completed")}</span> {data.workflow.completedAt ? new Date(data.workflow.completedAt).toLocaleString(locale) : "-"}</div>
               <div className="pt-1">
                 <Link
                   href={`/?prompt=${encodeURIComponent(`Continue this previous task with fixes/improvements: ${data.workflow.userPrompt}`)}`}
@@ -98,7 +98,7 @@ export default function WorkflowDetailPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-medium uppercase">{step.role}</div>
                     <div className="text-xs text-muted-foreground">
-                      {step.status} · {step.durationMs != null ? `${step.durationMs}ms` : "-"} · {t("historyDetail.step.in")}:{" "}
+                      {t(`status.${step.status}`)} · {step.durationMs != null ? `${step.durationMs}ms` : "-"} · {t("historyDetail.step.in")}:{" "}
                       {step.tokensIn ?? "-"} {t("historyDetail.step.out")}: {step.tokensOut ?? "-"}
                     </div>
                   </div>
