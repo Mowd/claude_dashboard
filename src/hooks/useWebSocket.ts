@@ -16,6 +16,7 @@ export function useWebSocket() {
   const reconnectAttempt = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const buffersRef = useRef<Map<string, OutputBuffer>>(new Map());
+  const allowReconnectRef = useRef(true);
 
   const { setWorkflow, setStatus, setCurrentStage, setCompleted } =
     useWorkflowStore();
@@ -250,6 +251,8 @@ export function useWebSocket() {
       setConnected(false);
       wsRef.current = null;
 
+      if (!allowReconnectRef.current) return;
+
       // Auto-reconnect with backoff
       const delay =
         RECONNECT_DELAYS[
@@ -271,6 +274,7 @@ export function useWebSocket() {
   }, []);
 
   useEffect(() => {
+    allowReconnectRef.current = true;
     connect();
     // Ping every 30s
     const pingInterval = setInterval(() => {
@@ -278,6 +282,7 @@ export function useWebSocket() {
     }, 30000);
 
     return () => {
+      allowReconnectRef.current = false;
       clearInterval(pingInterval);
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
 
@@ -285,7 +290,10 @@ export function useWebSocket() {
       // preserved so next dashboard mount can attach back to same PTY session.
       setConnected(false);
 
-      if (wsRef.current) wsRef.current.close();
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
       for (const buffer of buffersRef.current.values()) buffer.destroy();
       buffersRef.current.clear();
     };
