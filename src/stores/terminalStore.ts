@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface TerminalStoreState {
   terminalId: string | null;
@@ -10,11 +11,20 @@ interface TerminalStoreState {
   reset: () => void;
 }
 
-export const useTerminalStore = create<TerminalStoreState>((set) => ({
-  terminalId: null,
-  connected: false,
+export const useTerminalStore = create<TerminalStoreState>()(
+  persist(
+    (set) => ({
+      terminalId: null,
+      connected: false,
 
-  setTerminalId: (id) => set({ terminalId: id }),
-  setConnected: (connected) => set({ connected }),
-  reset: () => set({ terminalId: null, connected: false }),
-}));
+      setTerminalId: (id) => set({ terminalId: id }),
+      setConnected: (connected) => set({ connected }),
+      reset: () => set({ terminalId: null, connected: false }),
+    }),
+    {
+      name: "claude-dashboard-terminal",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({ terminalId: state.terminalId }),
+    }
+  )
+);
