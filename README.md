@@ -100,6 +100,37 @@ claude_dashboard/
 └── tsconfig.json
 ```
 
+## Changelog (0.1.0 → 0.4.0)
+
+### 0.4.0
+
+- Added **selectable execution plans** (`Full` / `Fast` / `Custom`) so small tasks can skip TEST/SEC when appropriate.
+- Added **Impact Preview** before run start to estimate risk and suggest a run mode.
+- Delivered broad **i18n support** (English + Traditional Chinese) with in-app language switcher and localized UI copy across dashboard, history, terminal, status labels, and events.
+
+### 0.3.0
+
+- Introduced **Workflow History** and **Workflow Detail** pages backed by SQLite persistence.
+- Added **history filters, pagination, retention cleanup, and workflow metrics**.
+- Added **templates, artifact summary, and retry-as-new-run** UX.
+- Hardened API/DB initialization paths and fixed history 500 issues.
+- Improved terminal reliability with route-switch reconnect/reattach fixes, including TUI (`htop`) restoration and replay buffering.
+
+### 0.2.0
+
+- Stabilized **npm package publishing and global install flow** (`cdb` launcher path and root detection fixes).
+- Improved cross-platform compatibility by migrating DB runtime to **sql.js (SQLite WASM)**.
+- Migrated server/tooling to **native ESM** and standardized test suite on **bun:test**.
+- Updated installation and quick-start documentation.
+
+### 0.1.0
+
+- Initial public baseline of Claude Dashboard:
+  - multi-agent PM→RD→UI→TEST→SEC pipeline
+  - real-time WebSocket streaming output
+  - integrated interactive terminal (xterm.js + node-pty)
+  - core workflow controls (start/pause/resume/cancel)
+
 ## ☕ Buy Me a Coffee
 
 If you find this project helpful, consider buying me a coffee!

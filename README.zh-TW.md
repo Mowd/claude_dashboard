@@ -100,6 +100,37 @@ claude_dashboard/
 └── tsconfig.json
 ```
 
+## 版本更新紀錄（0.1.0 → 0.4.0）
+
+### 0.4.0
+
+- 新增 **可選執行計畫**（`Full` / `Fast` / `Custom`），小任務可依需求略過 TEST/SEC。
+- 新增執行前 **Impact Preview**，可先估算風險並建議執行模式。
+- 完成大範圍 **i18n 國際化**（英文 + 繁中），含語言切換器與 dashboard / history / terminal / 狀態文案 / 事件文案在地化。
+
+### 0.3.0
+
+- 新增基於 SQLite 的 **Workflow History** 與 **Workflow Detail**。
+- 新增 **歷史篩選、分頁、保留清理、流程指標統計**。
+- 新增 **任務模板、產物摘要、以新執行重試** UX。
+- 強化 API / DB 初始化流程，修正 history 500 問題。
+- 強化 terminal 在路由切換下的穩定性，包含 TUI（如 `htop`）重連重附著與 replay 回放修正。
+
+### 0.2.0
+
+- 穩定化 **npm 發佈與全域安裝流程**（`cdb` 啟動路徑與專案根目錄偵測修正）。
+- 為跨平台相容性，資料庫執行時改為 **sql.js（SQLite WASM）**。
+- 後端/工具鏈遷移為 **原生 ESM**，測試統一為 **bun:test**。
+- 更新安裝與快速開始文件。
+
+### 0.1.0
+
+- 初版公開基礎功能：
+  - PM→RD→UI→TEST→SEC 多代理流水線
+  - WebSocket 即時串流輸出
+  - 內建互動式終端機（xterm.js + node-pty）
+  - 基本流程控制（開始 / 暫停 / 繼續 / 取消）
+
 ## ☕ Buy Me a Coffee
 
 如果你覺得這個專案對你有幫助，可以請我喝杯咖啡喔！
