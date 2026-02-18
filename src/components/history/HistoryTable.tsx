@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Workflow, WorkflowStatus } from "@/lib/workflow/types";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const statusColors: Record<string, string> = {
   pending: "text-gray-400",
@@ -42,6 +43,7 @@ interface WorkflowMetricsResponse {
 }
 
 export function HistoryTable() {
+  const { t } = useI18n();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +130,7 @@ export function HistoryTable() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
-        Loading...
+        {t("history.loading")}
       </div>
     );
   }
@@ -154,7 +156,7 @@ export function HistoryTable() {
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s === "all" ? "All statuses" : s}
+              {s === "all" ? t("history.filters.allStatuses") : s}
             </option>
           ))}
         </select>
@@ -162,14 +164,14 @@ export function HistoryTable() {
         <input
           value={queryInput}
           onChange={(e) => setQueryInput(e.target.value)}
-          placeholder="Search title or prompt"
+          placeholder={t("history.filters.searchPlaceholder")}
           className="h-8 min-w-[240px] rounded-md border border-border bg-background px-2 text-xs"
         />
         <button
           onClick={handleApplySearch}
           className="h-8 rounded-md border border-border px-3 text-xs hover:bg-white/5"
         >
-          Search
+          {t("history.filters.search")}
         </button>
       </div>
 
@@ -185,9 +187,9 @@ export function HistoryTable() {
       )}
 
       <div className="flex flex-wrap items-center gap-2 border border-border rounded-md p-2">
-        <span className="text-xs text-muted-foreground">Retention cleanup:</span>
+        <span className="text-xs text-muted-foreground">{t("history.retention")}</span>
         <label className="text-xs text-muted-foreground flex items-center gap-1">
-          keep days
+          {t("history.keepDays")}
           <input
             type="number"
             min={1}
@@ -197,7 +199,7 @@ export function HistoryTable() {
           />
         </label>
         <label className="text-xs text-muted-foreground flex items-center gap-1">
-          keep latest
+          {t("history.keepLatest")}
           <input
             type="number"
             min={1}
@@ -210,24 +212,24 @@ export function HistoryTable() {
           onClick={handleCleanup}
           className="h-8 rounded-md border border-border px-3 text-xs hover:bg-white/5"
         >
-          Run Cleanup
+          {t("history.runCleanup")}
         </button>
         {cleanupMessage && <span className="text-xs text-muted-foreground">{cleanupMessage}</span>}
       </div>
 
       {workflows.length === 0 ? (
         <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
-          No workflows found.
+          {t("history.empty")}
         </div>
       ) : (
         <div className="overflow-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left py-2 px-3 font-medium">Title</th>
-                <th className="text-left py-2 px-3 font-medium">Status</th>
-                <th className="text-left py-2 px-3 font-medium">Created</th>
-                <th className="text-left py-2 px-3 font-medium">Duration</th>
+                <th className="text-left py-2 px-3 font-medium">{t("history.table.title")}</th>
+                <th className="text-left py-2 px-3 font-medium">{t("history.table.status")}</th>
+                <th className="text-left py-2 px-3 font-medium">{t("history.table.created")}</th>
+                <th className="text-left py-2 px-3 font-medium">{t("history.table.duration")}</th>
               </tr>
             </thead>
             <tbody>
@@ -266,14 +268,14 @@ export function HistoryTable() {
             disabled={page <= 1}
             className="h-8 rounded-md border border-border px-3 disabled:opacity-40"
           >
-            Prev
+            {t("history.pagination.prev")}
           </button>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
             className="h-8 rounded-md border border-border px-3 disabled:opacity-40"
           >
-            Next
+            {t("history.pagination.next")}
           </button>
         </div>
       </div>

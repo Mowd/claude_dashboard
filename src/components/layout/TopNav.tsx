@@ -7,6 +7,9 @@ import { useAgentStore } from "@/stores/agentStore";
 import { AGENT_ORDER } from "@/lib/workflow/types";
 import { useUiStore } from "@/stores/uiStore";
 import { UsageIndicator } from "@/components/layout/UsageIndicator";
+import { useI18n } from "@/lib/i18n/useI18n";
+import { SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/messages";
+import { useI18nStore } from "@/stores/i18nStore";
 
 function formatDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -34,6 +37,8 @@ export function TopNav() {
   const { status, title, startedAt, completedAt } = useWorkflowStore();
   const agents = useAgentStore((s) => s.agents);
   const { terminalVisible, eventLogVisible, toggleTerminal, toggleEventLog } = useUiStore();
+  const { locale, t } = useI18n();
+  const setLocale = useI18nStore((s) => s.setLocale);
 
   const completedCount = AGENT_ORDER.filter(
     (r) => agents[r].status === "completed"
@@ -52,19 +57,19 @@ export function TopNav() {
     <header className="h-12 border-b border-border bg-card flex items-center justify-between px-4">
       <div className="flex items-center gap-3 min-w-0">
         <h1 className="text-sm font-semibold tracking-tight whitespace-nowrap">
-          Claude Dashboard
+          {t("app.title")}
         </h1>
         <Link
           href="/"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Dashboard
+          {t("nav.dashboard")}
         </Link>
         <Link
           href="/history"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          History
+          {t("nav.history")}
         </Link>
         {title && (
           <span className="text-xs text-muted-foreground truncate max-w-[300px]">
@@ -76,21 +81,36 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+          {t("nav.language")}
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            className="h-6 rounded border border-border bg-background px-1 text-[10px]"
+          >
+            {SUPPORTED_LOCALES.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <button
           type="button"
           onClick={toggleEventLog}
           className={`text-[10px] px-2 py-1 rounded border ${eventLogVisible ? "border-emerald-500/40 text-emerald-300" : "border-border text-muted-foreground"}`}
-          title="Toggle event log panel"
+          title={t("nav.toggleEvents")}
         >
-          Events
+          {t("nav.events")}
         </button>
         <button
           type="button"
           onClick={toggleTerminal}
           className={`text-[10px] px-2 py-1 rounded border ${terminalVisible ? "border-emerald-500/40 text-emerald-300" : "border-border text-muted-foreground"}`}
-          title="Toggle terminal panel"
+          title={t("nav.toggleTerminal")}
         >
-          Terminal
+          {t("nav.terminal")}
         </button>
 
         {status !== "pending" && (
@@ -101,7 +121,10 @@ export function TopNav() {
               {status.toUpperCase()}
             </span>
             <span className="text-xs text-muted-foreground">
-              {completedCount}/{AGENT_ORDER.length} agents
+              {t("nav.agentsProgress", {
+                completed: completedCount,
+                total: AGENT_ORDER.length,
+              })}
             </span>
             {startedAt && (
               status === "running" || status === "paused"
