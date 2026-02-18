@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import type { AgentStep, Workflow } from "@/lib/workflow/types";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 interface WorkflowDetailResponse {
   workflow: Workflow;
@@ -14,6 +15,7 @@ interface WorkflowDetailResponse {
 export default function WorkflowDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
+  const { t } = useI18n();
 
   const [data, setData] = useState<WorkflowDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,36 +51,36 @@ export default function WorkflowDetailPage() {
     <DashboardShell>
       <div className="p-4 space-y-4 overflow-auto">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Workflow Detail</h2>
+          <h2 className="text-lg font-semibold">{t("historyDetail.title")}</h2>
           <Link href="/history" className="text-xs text-muted-foreground hover:text-foreground">
-            ← Back to History
+            {t("historyDetail.back")}
           </Link>
         </div>
 
-        {loading && <div className="text-sm text-muted-foreground">Loading...</div>}
-        {error && <div className="text-sm text-red-400">Failed to load: {error}</div>}
+        {loading && <div className="text-sm text-muted-foreground">{t("historyDetail.loading")}</div>}
+        {error && <div className="text-sm text-red-400">{t("historyDetail.loadFailed", { error })}</div>}
 
         {data && (
           <>
             <div className="rounded-md border border-border p-3 text-sm space-y-1">
-              <div><span className="text-muted-foreground">Title:</span> {data.workflow.title}</div>
-              <div><span className="text-muted-foreground">Status:</span> {data.workflow.status}</div>
-              <div><span className="text-muted-foreground">Created:</span> {new Date(data.workflow.createdAt).toLocaleString()}</div>
-              <div><span className="text-muted-foreground">Completed:</span> {data.workflow.completedAt ? new Date(data.workflow.completedAt).toLocaleString() : "-"}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.title")}</span> {data.workflow.title}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.status")}</span> {data.workflow.status}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.created")}</span> {new Date(data.workflow.createdAt).toLocaleString()}</div>
+              <div><span className="text-muted-foreground">{t("historyDetail.meta.completed")}</span> {data.workflow.completedAt ? new Date(data.workflow.completedAt).toLocaleString() : "-"}</div>
               <div className="pt-1">
                 <Link
                   href={`/?prompt=${encodeURIComponent(`Continue this previous task with fixes/improvements: ${data.workflow.userPrompt}`)}`}
                   className="text-xs text-emerald-400 hover:underline"
                 >
-                  Retry entire workflow as new run
+                  {t("historyDetail.retryWorkflow")}
                 </Link>
               </div>
             </div>
 
             <div className="rounded-md border border-border p-3">
-              <div className="text-sm font-medium mb-2">Run artifact summary (detected file paths)</div>
+              <div className="text-sm font-medium mb-2">{t("historyDetail.artifacts.title")}</div>
               {artifactPaths.length === 0 ? (
-                <div className="text-xs text-muted-foreground">No file paths detected from agent outputs.</div>
+                <div className="text-xs text-muted-foreground">{t("historyDetail.artifacts.empty")}</div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {artifactPaths.map((p) => (
@@ -96,20 +98,20 @@ export default function WorkflowDetailPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-medium uppercase">{step.role}</div>
                     <div className="text-xs text-muted-foreground">
-                      {step.status} · {step.durationMs != null ? `${step.durationMs}ms` : "-"} · in:{" "}
-                      {step.tokensIn ?? "-"} out: {step.tokensOut ?? "-"}
+                      {step.status} · {step.durationMs != null ? `${step.durationMs}ms` : "-"} · {t("historyDetail.step.in")}:{" "}
+                      {step.tokensIn ?? "-"} {t("historyDetail.step.out")}: {step.tokensOut ?? "-"}
                     </div>
                   </div>
                   <div className="mb-2">
                     <Link
-                      href={`/?prompt=${encodeURIComponent(`Retry from ${step.role.toUpperCase()} stage. Original task: ${data.workflow.userPrompt}\n\nPrevious ${step.role.toUpperCase()} output:\n${step.output || "(no output)"}`)}`}
+                      href={`/?prompt=${encodeURIComponent(`Retry from ${step.role.toUpperCase()} stage. Original task: ${data.workflow.userPrompt}\n\nPrevious ${step.role.toUpperCase()} output:\n${step.output || t("historyDetail.step.noOutput")}`)}`}
                       className="text-xs text-emerald-400 hover:underline"
                     >
-                      Retry from this step as new run
+                      {t("historyDetail.step.retry")}
                     </Link>
                   </div>
                   <pre className="text-xs whitespace-pre-wrap break-words text-muted-foreground bg-black/20 rounded p-2 max-h-72 overflow-auto">
-                    {step.output || "(no output)"}
+                    {step.output || t("historyDetail.step.noOutput")}
                   </pre>
                 </div>
               ))}

@@ -2,6 +2,7 @@
 
 import type { EventLogItem as EventLogItemType } from "@/types";
 import { AGENT_CONFIG } from "@/lib/workflow/types";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const typeStyles: Record<string, string> = {
   info: "text-gray-400",
@@ -11,7 +12,8 @@ const typeStyles: Record<string, string> = {
 };
 
 export function EventLogItem({ event }: { event: EventLogItemType }) {
-  const time = new Date(event.timestamp).toLocaleTimeString("en-US", {
+  const { locale } = useI18n();
+  const time = new Date(event.timestamp).toLocaleTimeString(locale, {
     hour12: false,
     hour: "2-digit",
     minute: "2-digit",

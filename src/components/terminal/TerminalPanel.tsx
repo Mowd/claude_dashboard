@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTerminalStore } from "@/stores/terminalStore";
 import type { XTermHandle } from "./XTermRenderer";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const XTermRenderer = dynamic(
   () =>
@@ -19,6 +20,7 @@ interface TerminalPanelProps {
 
 export function TerminalPanel({ send }: TerminalPanelProps) {
   const { terminalId, connected, setTerminalId } = useTerminalStore();
+  const { t } = useI18n();
   const termRef = useRef<XTermHandle>(null);
   const [error, setError] = useState<string | null>(null);
   const pendingOutputRef = useRef<string[]>([]);
@@ -156,7 +158,7 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   if (!connected) {
     return (
       <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-        Connecting to server...
+        {t("terminal.connecting")}
       </div>
     );
   }
@@ -165,8 +167,8 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
     return (
       <div className="h-full flex flex-col">
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
-          <span className="text-xs font-medium">Terminal</span>
-          <span className="text-[10px] text-red-400">Error</span>
+          <span className="text-xs font-medium">{t("terminal.title")}</span>
+          <span className="text-[10px] text-red-400">{t("terminal.error")}</span>
         </div>
         <div className="flex-1 flex items-center justify-center px-4">
           <p className="text-xs text-red-400 text-center">{error}</p>
@@ -178,9 +180,9 @@ export function TerminalPanel({ send }: TerminalPanelProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
-        <span className="text-xs font-medium">Terminal</span>
+        <span className="text-xs font-medium">{t("terminal.title")}</span>
         <span className="text-[10px] text-muted-foreground">
-          {terminalId ? "Connected" : "Initializing..."}
+          {terminalId ? t("terminal.connected") : t("terminal.initializing")}
         </span>
       </div>
       <div className="flex-1 min-h-0">
