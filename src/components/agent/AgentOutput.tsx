@@ -4,14 +4,21 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
 import type { AgentActivity } from "@/lib/workflow/types";
+import { useI18n } from "@/lib/i18n/useI18n";
 
-function ActivityIndicator({ activity }: { activity: AgentActivity }) {
+function ActivityIndicator({
+  activity,
+  t,
+}: {
+  activity: AgentActivity;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
   switch (activity.kind) {
     case "thinking":
       return (
         <span className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
-          Thinking...
+          {t("agent.activity.thinking")}
         </span>
       );
     case "tool_use":
@@ -21,14 +28,14 @@ function ActivityIndicator({ activity }: { activity: AgentActivity }) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
           </span>
-          Using {activity.toolName}...
+          {t("agent.activity.toolUse", { tool: activity.toolName })}
         </span>
       );
     case "text":
       return (
         <span className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          Writing response...
+          {t("agent.activity.writing")}
         </span>
       );
     case "idle":
@@ -39,7 +46,7 @@ function ActivityIndicator({ activity }: { activity: AgentActivity }) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          Waiting for output...
+          {t("agent.activity.waiting")}
         </span>
       );
   }
@@ -57,14 +64,15 @@ export function AgentOutput({
   activity,
 }: AgentOutputProps) {
   const { ref, handleScroll } = useAutoScroll<HTMLDivElement>([output]);
+  const { t } = useI18n();
 
   if (!output) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-xs text-muted-foreground">
         {isStreaming ? (
-          <ActivityIndicator activity={activity ?? { kind: "idle" }} />
+          <ActivityIndicator activity={activity ?? { kind: "idle" }} t={t} />
         ) : (
-          "No output yet"
+          t("agent.output.none")
         )}
       </div>
     );

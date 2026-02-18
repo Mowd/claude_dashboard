@@ -8,6 +8,7 @@ import { useTerminalStore } from "@/stores/terminalStore";
 import { OutputBuffer } from "@/lib/output-buffer";
 import type { AgentRole } from "@/lib/workflow/types";
 import { AGENT_CONFIG, AGENT_ORDER, getStageForRole } from "@/lib/workflow/types";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
 
@@ -20,6 +21,7 @@ export function useWebSocket() {
 
   const { setWorkflow, setStatus, setCurrentStage, setCompleted } =
     useWorkflowStore();
+  const { t } = useI18n();
   const {
     applyExecutionPlan,
     appendChunks,
@@ -67,13 +69,16 @@ export function useWebSocket() {
               : AGENT_ORDER,
           );
           setWorkflow(workflowId, title);
-          addEvent({ type: "info", message: `Workflow started: ${title}` });
+          addEvent({
+            type: "info",
+            message: t("events.workflowStarted", { title }),
+          });
           break;
         }
 
         case "workflow:completed": {
           setCompleted();
-          addEvent({ type: "success", message: "Workflow completed successfully" });
+          addEvent({ type: "success", message: t("events.workflowCompleted") });
           // Flush all buffers
           for (const buffer of buffersRef.current.values()) buffer.flush();
           break;
@@ -82,19 +87,22 @@ export function useWebSocket() {
         case "workflow:failed": {
           const { error } = data.payload;
           setStatus("failed");
-          addEvent({ type: "error", message: `Workflow failed: ${error}` });
+          addEvent({
+            type: "error",
+            message: t("events.workflowFailed", { error }),
+          });
           for (const buffer of buffersRef.current.values()) buffer.flush();
           break;
         }
 
         case "workflow:paused":
           setStatus("paused");
-          addEvent({ type: "warning", message: "Workflow paused" });
+          addEvent({ type: "warning", message: t("events.workflowPaused") });
           break;
 
         case "workflow:cancelled":
           setStatus("cancelled");
-          addEvent({ type: "warning", message: "Workflow cancelled" });
+          addEvent({ type: "warning", message: t("events.workflowCancelled") });
           for (const buffer of buffersRef.current.values()) buffer.flush();
           // Reset any agents still running — the server won't send step:failed for cancelled agents
           for (const role of AGENT_ORDER) {
@@ -110,11 +118,15 @@ export function useWebSocket() {
           const currentRetry = useAgentStore.getState().agents[role].retryCount;
           setCurrentStage(stage.index);
           setAgentStarted(role);
-          const retryLabel = currentRetry > 0 ? ` (retry ${currentRetry})` : "";
+          const retryLabel =
+            currentRetry > 0 ? t("events.retrySuffix", { count: currentRetry }) : "";
           addEvent({
             type: "info",
             role,
-            message: `${AGENT_CONFIG[role].label} agent started${retryLabel}`,
+            message: t("events.agentStarted", {
+              agent: AGENT_CONFIG[role].label,
+              retry: retryLabel,
+            }),
           });
           break;
         }
@@ -145,7 +157,10 @@ export function useWebSocket() {
           addEvent({
             type: "success",
             role,
-            message: `${AGENT_CONFIG[role].label} agent completed in ${(durationMs / 1000).toFixed(1)}s`,
+            message: t("events.agentCompleted", {
+              agent: AGENT_CONFIG[role].label,
+              seconds: (durationMs / 1000).toFixed(1),
+            }),
           });
           break;
         }
@@ -161,7 +176,10 @@ export function useWebSocket() {
           addEvent({
             type: "error",
             role,
-            message: `${AGENT_CONFIG[role].label} agent failed: ${error}`,
+            message: t("events.agentFailed", {
+              agent: AGENT_CONFIG[role].label,
+              error,
+            }),
           });
           break;
         }
@@ -186,7 +204,12 @@ export function useWebSocket() {
           addEvent({
             type: "warning",
             role,
-            message: `${AGENT_CONFIG[role].label} agent retrying (${attempt}/${maxRetries}): ${reason}`,
+            message: t("events.agentRetry", {
+              agent: AGENT_CONFIG[role].label,
+              attempt,
+              max: maxRetries,
+              reason,
+            }),
           });
           break;
         }
@@ -237,6 +260,7 @@ export function useWebSocket() {
       addEvent,
       setTerminalId,
       getOrCreateBuffer,
+      t,
     ]
   );
 
@@ -251,7 +275,7 @@ export function useWebSocket() {
       console.log("[WS] Connected");
       reconnectAttempt.current = 0;
       setConnected(true);
-      addEvent({ type: "info", message: "Connected to server" });
+      addEvent({ type: "info", message: t("events.connected") });
     };
 
     ws.onmessage = (event) => {
@@ -282,7 +306,7 @@ export function useWebSocket() {
     ws.onerror = (err) => {
       console.error("[WS] Error:", err);
     };
-  }, [handleMessage, setConnected, addEvent]);
+  }, [handleMessage, setConnected, addEvent, t]);
 
   const send = useCallback((message: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

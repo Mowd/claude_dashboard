@@ -5,10 +5,12 @@ import { useAgentStore } from "@/stores/agentStore";
 import { PIPELINE_STAGES } from "@/lib/workflow/types";
 import { cn } from "@/lib/utils";
 import { PipelineNode } from "./PipelineNode";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 export function PipelineBar() {
   const { currentStageIndex, status } = useWorkflowStore();
   const agents = useAgentStore((s) => s.agents);
+  const { t } = useI18n();
 
   return (
     <div className="h-10 border-b border-border bg-card/50 flex items-center px-4 gap-1">
@@ -52,7 +54,7 @@ export function PipelineBar() {
             : "border-gray-600 bg-gray-800/50 text-gray-500"
         )}
       >
-        Done
+        {t("pipeline.done")}
       </div>
     </div>
   );

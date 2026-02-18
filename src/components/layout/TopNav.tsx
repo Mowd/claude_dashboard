@@ -118,7 +118,7 @@ export function TopNav() {
             <span
               className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[status] || ""}`}
             >
-              {status.toUpperCase()}
+              {t(`status.${status}`)}
             </span>
             <span className="text-xs text-muted-foreground">
               {t("nav.agentsProgress", {

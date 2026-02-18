@@ -2,6 +2,7 @@
 
 import { useUsage } from "@/hooks/useUsage";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 /**
  * Returns Tailwind color classes based on usage percentage thresholds.
@@ -29,11 +30,15 @@ function formatPercent(utilization: number | null | undefined): string {
  * Formats an ISO 8601 date string into a localized reset time string.
  * Example: "2026-02-13 14:00"
  */
-function formatResetTime(resetsAt: string | null | undefined): string {
-  if (!resetsAt) return "N/A";
+function formatResetTime(
+  resetsAt: string | null | undefined,
+  locale: string,
+  fallback: string,
+): string {
+  if (!resetsAt) return fallback;
   try {
     const date = new Date(resetsAt);
-    return date.toLocaleString("zh-TW", {
+    return date.toLocaleString(locale, {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
@@ -41,7 +46,7 @@ function formatResetTime(resetsAt: string | null | undefined): string {
       hour12: false,
     });
   } catch {
-    return "N/A";
+    return fallback;
   }
 }
 
@@ -51,20 +56,24 @@ interface UsageItemProps {
   utilization: number | null | undefined;
   resetsAt: string | null | undefined;
   tooltipLabel: string;
+  locale: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 /**
  * A single usage metric with tooltip showing reset time.
  */
-function UsageItem({ label, utilization, resetsAt, tooltipLabel }: UsageItemProps) {
+function UsageItem({ label, utilization, resetsAt, tooltipLabel, locale, t }: UsageItemProps) {
   const tooltipContent = (
     <div className="text-xs">
       <div className="font-medium mb-0.5">{tooltipLabel}</div>
       <div className="text-muted-foreground">
-        Usage: {formatPercent(utilization)}
+        {t("usage.tooltip.usage", { value: formatPercent(utilization) })}
       </div>
       <div className="text-muted-foreground">
-        Resets: {formatResetTime(resetsAt)}
+        {t("usage.tooltip.resets", {
+          value: formatResetTime(resetsAt, locale, t("usage.tooltip.na")),
+        })}
       </div>
     </div>
   );
@@ -90,19 +99,20 @@ function UsageItem({ label, utilization, resetsAt, tooltipLabel }: UsageItemProp
  */
 export function UsageIndicator() {
   const { data, loading } = useUsage();
+  const { locale, t } = useI18n();
 
   // Show subtle loading skeleton while fetching initial data
   if (loading) {
     return (
       <div
         className="hidden md:flex items-center gap-2 text-xs text-muted-foreground"
-        aria-label="Loading usage data"
+        aria-label={t("usage.loadingAria")}
       >
-        <span className="animate-pulse opacity-50">Session: --</span>
+        <span className="animate-pulse opacity-50">{t("usage.session")}: --</span>
         <span className="text-border opacity-30">|</span>
-        <span className="animate-pulse opacity-50">Week: --</span>
+        <span className="animate-pulse opacity-50">{t("usage.week")}: --</span>
         <span className="text-border opacity-30">|</span>
-        <span className="animate-pulse opacity-50">Sonnet: --</span>
+        <span className="animate-pulse opacity-50">{t("usage.sonnet")}: --</span>
       </div>
     );
   }
@@ -124,9 +134,9 @@ export function UsageIndicator() {
       >
         <div
           className="hidden md:flex items-center gap-2 text-xs text-muted-foreground"
-          aria-label="Usage data unavailable"
+          aria-label={t("usage.unavailableAria")}
         >
-          <span className="opacity-50">Usage: --</span>
+          <span className="opacity-50">{t("usage.unavailable")}</span>
         </div>
       </Tooltip>
     );
@@ -139,24 +149,30 @@ export function UsageIndicator() {
       aria-label="Claude Code usage metrics"
     >
       <UsageItem
-        label="Session"
+        label={t("usage.session")}
         utilization={session}
         resetsAt={data?.five_hour?.resets_at}
-        tooltipLabel="Current Session (5h window)"
+        tooltipLabel={t("usage.tooltip.session")}
+        locale={locale}
+        t={t}
       />
       <span className="text-border select-none" aria-hidden="true">|</span>
       <UsageItem
-        label="Week"
+        label={t("usage.week")}
         utilization={week}
         resetsAt={data?.seven_day?.resets_at}
-        tooltipLabel="Weekly All Models (7 days)"
+        tooltipLabel={t("usage.tooltip.week")}
+        locale={locale}
+        t={t}
       />
       <span className="text-border select-none" aria-hidden="true">|</span>
       <UsageItem
-        label="Sonnet"
+        label={t("usage.sonnet")}
         utilization={sonnet}
         resetsAt={data?.seven_day_sonnet?.resets_at}
-        tooltipLabel="Weekly Sonnet (7 days)"
+        tooltipLabel={t("usage.tooltip.sonnet")}
+        locale={locale}
+        t={t}
       />
     </div>
   );

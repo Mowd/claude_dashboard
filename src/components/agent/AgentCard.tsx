@@ -6,6 +6,7 @@ import type { AgentRole } from "@/lib/workflow/types";
 import { AGENT_CONFIG } from "@/lib/workflow/types";
 import { AgentStatusBadge } from "./AgentStatusBadge";
 import { AgentOutput } from "./AgentOutput";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 interface AgentCardProps {
   role: AgentRole;
@@ -40,6 +41,7 @@ function LiveTimer({ startedAt }: { startedAt: number | null }) {
 
 export function AgentCard({ role }: AgentCardProps) {
   const config = AGENT_CONFIG[role];
+  const { t } = useI18n();
   const {
     status,
     output,
@@ -74,7 +76,7 @@ export function AgentCard({ role }: AgentCardProps) {
           <span className="text-xs font-semibold">{config.label}</span>
           {retryCount > 0 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-medium">
-              retry {retryCount}
+              {t("agent.retry", { count: retryCount })}
             </span>
           )}
         </div>
@@ -108,8 +110,12 @@ export function AgentCard({ role }: AgentCardProps) {
       {/* Footer stats */}
       {(tokensIn != null || tokensOut != null) && (
         <div className="px-3 py-1 border-t border-border flex gap-3 text-[10px] text-muted-foreground">
-          {tokensIn != null && <span>In: {tokensIn.toLocaleString()}</span>}
-          {tokensOut != null && <span>Out: {tokensOut.toLocaleString()}</span>}
+          {tokensIn != null && (
+            <span>{t("agent.tokens.in", { value: tokensIn.toLocaleString() })}</span>
+          )}
+          {tokensOut != null && (
+            <span>{t("agent.tokens.out", { value: tokensOut.toLocaleString() })}</span>
+          )}
         </div>
       )}
     </div>

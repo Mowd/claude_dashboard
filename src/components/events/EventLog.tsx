@@ -5,9 +5,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEventStore } from "@/stores/eventStore";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
 import { EventLogItem } from "./EventLogItem";
+import { useI18n } from "@/lib/i18n/useI18n";
 
 export function EventLog() {
   const events = useEventStore((s) => s.events);
+  const { t } = useI18n();
   const parentRef = useRef<HTMLDivElement>(null);
   const { ref: scrollRef, handleScroll } = useAutoScroll<HTMLDivElement>([
     events.length,
@@ -23,9 +25,9 @@ export function EventLog() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
-        <span className="text-xs font-medium">Event Log</span>
+        <span className="text-xs font-medium">{t("events.title")}</span>
         <span className="text-[10px] text-muted-foreground">
-          {events.length} events
+          {t("events.count", { count: events.length })}
         </span>
       </div>
       <div
