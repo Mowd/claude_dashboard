@@ -1,5 +1,7 @@
 export type AgentRole = 'pm' | 'rd' | 'ui' | 'test' | 'sec';
 
+export const ALL_AGENT_ROLES: AgentRole[] = ['pm', 'rd', 'ui', 'test', 'sec'];
+
 export type WorkflowStatus =
   | 'pending'
   | 'running'
@@ -60,6 +62,20 @@ export const PIPELINE_STAGES: PipelineStage[] = [
 
 /** The fixed execution order for agents within a workflow (derived from stages). */
 export const AGENT_ORDER: AgentRole[] = PIPELINE_STAGES.flatMap(s => s.roles);
+
+export function normalizeExecutionPlan(input?: AgentRole[] | null): AgentRole[] {
+  if (!input || input.length === 0) return [...AGENT_ORDER];
+
+  const requested = new Set<AgentRole>();
+  for (const role of input) {
+    if (AGENT_ORDER.includes(role)) {
+      requested.add(role);
+    }
+  }
+
+  const ordered = AGENT_ORDER.filter((role) => requested.has(role));
+  return ordered.length > 0 ? ordered : [...AGENT_ORDER];
+}
 
 /** Get the pipeline stage that contains the given role. */
 export function getStageForRole(role: AgentRole): PipelineStage {

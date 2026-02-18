@@ -20,8 +20,15 @@ export function useWebSocket() {
 
   const { setWorkflow, setStatus, setCurrentStage, setCompleted } =
     useWorkflowStore();
-  const { appendChunks, setAgentStarted, setAgentCompleted, setAgentFailed, setAgentActivity, setAgentRetry } =
-    useAgentStore();
+  const {
+    applyExecutionPlan,
+    appendChunks,
+    setAgentStarted,
+    setAgentCompleted,
+    setAgentFailed,
+    setAgentActivity,
+    setAgentRetry,
+  } = useAgentStore();
   const addEvent = useEventStore((s) => s.addEvent);
   const { setTerminalId, setConnected } = useTerminalStore();
 
@@ -46,10 +53,19 @@ export function useWebSocket() {
           break;
 
         case "workflow:created": {
-          const { workflowId, title } = data.payload;
+          const { workflowId, title, executionPlan } = data.payload as {
+            workflowId: string;
+            title: string;
+            executionPlan?: AgentRole[];
+          };
           // Destroy old buffers so stale data from a previous workflow doesn't leak
           for (const buffer of buffersRef.current.values()) buffer.destroy();
           buffersRef.current.clear();
+          applyExecutionPlan(
+            Array.isArray(executionPlan) && executionPlan.length > 0
+              ? executionPlan
+              : AGENT_ORDER,
+          );
           setWorkflow(workflowId, title);
           addEvent({ type: "info", message: `Workflow started: ${title}` });
           break;
@@ -212,6 +228,7 @@ export function useWebSocket() {
       setStatus,
       setCurrentStage,
       setCompleted,
+      applyExecutionPlan,
       setAgentStarted,
       setAgentCompleted,
       setAgentFailed,

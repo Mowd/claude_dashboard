@@ -4,9 +4,10 @@ import { useState, useCallback, useEffect, type FormEvent } from "react";
 import { useWorkflowStore } from "@/stores/workflowStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useEventStore } from "@/stores/eventStore";
+import { AGENT_ORDER, type AgentRole } from "@/lib/workflow/types";
 
 interface WorkflowLauncherProps {
-  onStart: (prompt: string) => void;
+  onStart: (prompt: string, executionPlan: AgentRole[]) => void;
   onPause: () => void;
   onResume: () => void;
   onCancel: () => void;
@@ -32,6 +33,16 @@ const PROMPT_TEMPLATES = [
   },
 ];
 
+const FAST_PLAN: AgentRole[] = ["pm", "rd", "ui"];
+
+type RunMode = "full" | "fast" | "custom";
+
+interface ImpactPreview {
+  impact: "low" | "medium" | "high";
+  suggestedMode: RunMode;
+  rationale: string;
+}
+
 export function WorkflowLauncher({
   onStart,
   onPause,
@@ -40,7 +51,10 @@ export function WorkflowLauncher({
   initialPrompt,
 }: WorkflowLauncherProps) {
   const [prompt, setPrompt] = useState("");
-  const { status, workflowId } = useWorkflowStore();
+  const [runMode, setRunMode] = useState<RunMode>("full");
+  const [customSelection, setCustomSelection] = useState<AgentRole[]>(AGENT_ORDER);
+  const [preview, setPreview] = useState<ImpactPreview | null>(null);
+  const { status } = useWorkflowStore();
   const resetAgents = useAgentStore((s) => s.resetAll);
   const clearEvents = useEventStore((s) => s.clear);
   const resetWorkflow = useWorkflowStore((s) => s.reset);
@@ -51,17 +65,49 @@ export function WorkflowLauncher({
     }
   }, [initialPrompt]);
 
+  useEffect(() => {
+    setPreview(null);
+  }, [prompt]);
+
+  const selectedPlan =
+    runMode === "full"
+      ? AGENT_ORDER
+      : runMode === "fast"
+        ? FAST_PLAN
+        : AGENT_ORDER.filter((role) => customSelection.includes(role));
+
+  const handleToggleCustomRole = (role: AgentRole) => {
+    setCustomSelection((prev) => {
+      if (prev.includes(role)) {
+        if (prev.length <= 1) return prev;
+        return prev.filter((r) => r !== role);
+      }
+      return [...prev, role];
+    });
+  };
+
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
       if (!prompt.trim()) return;
+      if (selectedPlan.length === 0) return;
       resetWorkflow();
       resetAgents();
       clearEvents();
-      onStart(prompt.trim());
+      onStart(prompt.trim(), selectedPlan);
     },
-    [prompt, onStart, resetWorkflow, resetAgents, clearEvents]
+    [prompt, selectedPlan, onStart, resetWorkflow, resetAgents, clearEvents]
   );
+
+  const handlePreview = useCallback(() => {
+    if (!prompt.trim()) return;
+    setPreview(analyzePromptImpact(prompt));
+  }, [prompt]);
+
+  const applySuggestedMode = useCallback(() => {
+    if (!preview) return;
+    setRunMode(preview.suggestedMode);
+  }, [preview]);
 
   const isIdle =
     status === "pending" ||
@@ -88,6 +134,78 @@ export function WorkflowLauncher({
         ))}
       </div>
 
+      {isIdle && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Run mode:</span>
+            <button
+              type="button"
+              onClick={() => setRunMode("full")}
+              className={`h-7 rounded-md border px-2 ${runMode === "full" ? "border-emerald-500 text-emerald-400" : "border-border text-muted-foreground"}`}
+            >
+              Full (PM/RD/UI/TEST/SEC)
+            </button>
+            <button
+              type="button"
+              onClick={() => setRunMode("fast")}
+              className={`h-7 rounded-md border px-2 ${runMode === "fast" ? "border-yellow-500 text-yellow-400" : "border-border text-muted-foreground"}`}
+            >
+              Fast (skip TEST/SEC)
+            </button>
+            <button
+              type="button"
+              onClick={() => setRunMode("custom")}
+              className={`h-7 rounded-md border px-2 ${runMode === "custom" ? "border-blue-500 text-blue-400" : "border-border text-muted-foreground"}`}
+            >
+              Custom
+            </button>
+          </div>
+
+          {runMode === "custom" && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {AGENT_ORDER.map((role) => {
+                const checked = customSelection.includes(role);
+                return (
+                  <label key={role} className="inline-flex items-center gap-1 rounded border border-border px-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => handleToggleCustomRole(role)}
+                    />
+                    <span className="uppercase">{role}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedPlan.length < AGENT_ORDER.length && (
+            <div className="text-xs rounded-md border border-yellow-800/60 bg-yellow-900/20 px-2 py-1 text-yellow-300">
+              ⚠️ This run will skip {AGENT_ORDER.filter((role) => !selectedPlan.includes(role)).join(", ").toUpperCase()}.
+            </div>
+          )}
+
+          {preview && (
+            <div className="rounded-md border border-border p-2 text-xs space-y-1">
+              <div>
+                Impact: <span className="font-medium uppercase">{preview.impact}</span>
+              </div>
+              <div>
+                Suggested mode: <span className="font-medium uppercase">{preview.suggestedMode}</span>
+              </div>
+              <div className="text-muted-foreground">{preview.rationale}</div>
+              <button
+                type="button"
+                onClick={applySuggestedMode}
+                className="h-7 rounded-md border border-border px-2 hover:bg-white/5"
+              >
+                Apply suggestion
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
@@ -98,13 +216,23 @@ export function WorkflowLauncher({
           className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
         />
         {isIdle && (
-          <button
-            type="submit"
-            disabled={!prompt.trim()}
-            className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Start
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={handlePreview}
+              disabled={!prompt.trim()}
+              className="h-9 px-3 rounded-md border border-border text-xs hover:bg-white/5 disabled:opacity-50"
+            >
+              Preview
+            </button>
+            <button
+              type="submit"
+              disabled={!prompt.trim() || selectedPlan.length === 0}
+              className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Start
+            </button>
+          </>
         )}
         {isRunning && (
           <>
@@ -145,4 +273,35 @@ export function WorkflowLauncher({
       </form>
     </div>
   );
+}
+
+function analyzePromptImpact(prompt: string): ImpactPreview {
+  const text = prompt.toLowerCase();
+  const highRiskKeywords = ["auth", "payment", "security", "delete", "migration", "database", "permission"];
+  const mediumRiskKeywords = ["api", "schema", "checkout", "order", "billing", "session"];
+
+  const highHits = highRiskKeywords.filter((k) => text.includes(k)).length;
+  const mediumHits = mediumRiskKeywords.filter((k) => text.includes(k)).length;
+
+  if (highHits > 0) {
+    return {
+      impact: "high",
+      suggestedMode: "full",
+      rationale: "Prompt touches sensitive or high-risk areas. Keep TEST and SEC enabled.",
+    };
+  }
+
+  if (mediumHits > 1 || prompt.length > 180) {
+    return {
+      impact: "medium",
+      suggestedMode: "custom",
+      rationale: "Likely multi-file change. Consider Full mode or at least include TEST.",
+    };
+  }
+
+  return {
+    impact: "low",
+    suggestedMode: "fast",
+    rationale: "Looks like a small scoped task. Fast mode is probably sufficient.",
+  };
 }

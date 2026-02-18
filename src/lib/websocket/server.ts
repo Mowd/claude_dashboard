@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { ConnectionManager } from './connection-manager.ts';
 import { WorkflowEngine } from '../workflow/engine.ts';
+import { normalizeExecutionPlan, type AgentRole } from '../workflow/types.ts';
 import { PtyManager } from '../terminal/pty-manager.ts';
 
 export function setupWebSocketHandlers(
@@ -12,10 +13,10 @@ export function setupWebSocketHandlers(
   projectPath: string
 ) {
   // Wire workflow engine events to WebSocket broadcasts
-  engine.on('workflow:created', (workflowId: string, title: string) => {
+  engine.on('workflow:created', (workflowId: string, title: string, executionPlan: AgentRole[]) => {
     connectionManager.broadcastAll({
       type: 'workflow:created',
-      payload: { workflowId, title },
+      payload: { workflowId, title, executionPlan },
     });
   });
 
@@ -129,7 +130,7 @@ function handleClientMessage(
       break;
 
     case 'workflow:start': {
-      const { prompt, projectPath } = msg.payload || {};
+      const { prompt, projectPath, executionPlan } = msg.payload || {};
       if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         ws.send(JSON.stringify({
           type: 'workflow:failed',
@@ -138,7 +139,11 @@ function handleClientMessage(
         break;
       }
       const path = projectPath || defaultProjectPath;
-      engine.startWorkflow(prompt, path).then((workflowId) => {
+      const normalizedPlan = normalizeExecutionPlan(
+        Array.isArray(executionPlan) ? (executionPlan as AgentRole[]) : undefined,
+      );
+
+      engine.startWorkflow(prompt, path, normalizedPlan).then((workflowId) => {
         connectionManager.subscribeToWorkflow(clientId, workflowId);
       }).catch((err: any) => {
         console.error('[WS] Failed to start workflow:', err);

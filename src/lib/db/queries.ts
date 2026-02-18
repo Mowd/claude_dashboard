@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb } from './connection.ts';
 import {
   AGENT_ORDER,
+  normalizeExecutionPlan,
   type AgentRole,
   type AgentStep,
   type StepStatus,
@@ -78,15 +79,17 @@ function rowToStep(row: AgentStepRow): AgentStep {
 // ---------------------------------------------------------------------------
 
 /**
- * Create a new workflow together with its five agent-step rows (one per role
- * in `AGENT_ORDER`).  Everything runs inside a single transaction so that the
- * workflow and its steps are always created atomically.
+ * Create a new workflow together with one agent-step row per role in
+ * `AGENT_ORDER`. Steps outside the requested execution plan are marked as
+ * `skipped`. Everything runs inside a single transaction so workflow + steps
+ * are always created atomically.
  */
 export function createWorkflow(
   id: string,
   title: string,
   userPrompt: string,
   projectPath: string,
+  executionPlan?: AgentRole[],
 ): Workflow {
   const db = getDb();
 
@@ -97,8 +100,10 @@ export function createWorkflow(
 
   const insertStep = db.prepare(`
     INSERT INTO agent_steps (id, workflow_id, role, status)
-    VALUES (@id, @workflowId, @role, 'pending')
+    VALUES (@id, @workflowId, @role, @status)
   `);
+
+  const selected = new Set(normalizeExecutionPlan(executionPlan));
 
   const txn = db.transaction(() => {
     insertWorkflow.run({ id, title, userPrompt, projectPath });
@@ -108,6 +113,7 @@ export function createWorkflow(
         id: uuidv4(),
         workflowId: id,
         role,
+        status: selected.has(role) ? 'pending' : 'skipped',
       });
     }
   });

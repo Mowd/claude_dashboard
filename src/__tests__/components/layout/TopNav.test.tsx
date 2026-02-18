@@ -24,17 +24,23 @@ mock.module("@/stores/agentStore", () => ({
   useAgentStore: (selector: (s: any) => any) =>
     selector({
       agents: {
-        PM: { status: "pending" },
-        RD: { status: "pending" },
-        UI: { status: "pending" },
-        TEST: { status: "pending" },
-        SEC: { status: "pending" },
+        pm: { status: "pending" },
+        rd: { status: "pending" },
+        ui: { status: "pending" },
+        test: { status: "pending" },
+        sec: { status: "pending" },
       },
     }),
 }));
 
 mock.module("@/lib/workflow/types", () => ({
-  AGENT_ORDER: ["PM", "RD", "UI", "TEST", "SEC"],
+  AGENT_ORDER: ["pm", "rd", "ui", "test", "sec"],
+  normalizeExecutionPlan: (input?: string[] | null) => {
+    const base = ["pm", "rd", "ui", "test", "sec"];
+    if (!input || input.length === 0) return base;
+    const picked = base.filter((role) => input.includes(role));
+    return picked.length > 0 ? picked : base;
+  },
 }));
 
 mock.module("@/hooks/useUsage", () => ({

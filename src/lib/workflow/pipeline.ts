@@ -1,4 +1,4 @@
-import { type AgentRole, AGENT_ORDER, type WorkflowStatus, type StepStatus } from './types.ts';
+import { type AgentRole, AGENT_ORDER, normalizeExecutionPlan, type WorkflowStatus, type StepStatus } from './types.ts';
 
 export interface PipelineState {
   workflowId: string;
@@ -13,14 +13,16 @@ export interface PipelineStepState {
   retryCount: number;
 }
 
-export function createPipelineState(workflowId: string): PipelineState {
+export function createPipelineState(workflowId: string, executionPlan?: AgentRole[]): PipelineState {
+  const selected = new Set(normalizeExecutionPlan(executionPlan));
+
   return {
     workflowId,
     status: 'pending',
     currentStageIndex: 0,
     steps: AGENT_ORDER.map((role) => ({
       role,
-      status: 'pending',
+      status: selected.has(role) ? 'pending' : 'skipped',
       retryCount: 0,
     })),
   };

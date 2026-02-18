@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AgentRole } from "@/lib/workflow/types";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { PipelineBar } from "@/components/pipeline/PipelineBar";
 import { AgentCardGrid } from "@/components/agent/AgentCardGrid";
@@ -26,8 +27,11 @@ export default function DashboardPage() {
   }, []);
 
   const handleStart = useCallback(
-    (prompt: string) => {
-      send({ type: "workflow:start", payload: { prompt, projectPath: "" } });
+    (prompt: string, executionPlan: AgentRole[]) => {
+      send({
+        type: "workflow:start",
+        payload: { prompt, projectPath: "", executionPlan },
+      });
     },
     [send]
   );

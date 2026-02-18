@@ -1,13 +1,13 @@
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { type AgentRole, type AgentActivity, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole, type WorkflowStatus } from './types.ts';
+import { type AgentRole, type AgentActivity, AGENT_CONFIG, PIPELINE_STAGES, getStageForRole, normalizeExecutionPlan, type WorkflowStatus } from './types.ts';
 import { type PipelineState, createPipelineState } from './pipeline.ts';
 import { AgentRunner } from './agent-runner.ts';
 import { buildAgentPrompt, type AgentContext } from './context-builder.ts';
 import { getSystemPrompt } from '../agents/prompts.ts';
 
 export interface WorkflowEngineEvents {
-  'workflow:created': (workflowId: string, title: string) => void;
+  'workflow:created': (workflowId: string, title: string, executionPlan: AgentRole[]) => void;
   'workflow:completed': (workflowId: string) => void;
   'workflow:failed': (workflowId: string, error: string) => void;
   'workflow:paused': (workflowId: string) => void;
@@ -32,7 +32,7 @@ export class WorkflowEngine extends EventEmitter {
 
   // Database operations injected from outside
   private dbOps: {
-    createWorkflow: (id: string, title: string, userPrompt: string, projectPath: string) => void;
+    createWorkflow: (id: string, title: string, userPrompt: string, projectPath: string, executionPlan?: AgentRole[]) => void;
     updateWorkflowStatus: (id: string, status: WorkflowStatus, currentStepIndex?: number) => void;
     updateStepStatus: (id: string, updates: Record<string, unknown>) => void;
     getStepsForWorkflow: (workflowId: string) => Array<{ id: string; role: AgentRole; output: string; status: string }>;
@@ -43,13 +43,14 @@ export class WorkflowEngine extends EventEmitter {
     this.dbOps = dbOps;
   }
 
-  async startWorkflow(userPrompt: string, projectPath: string): Promise<string> {
+  async startWorkflow(userPrompt: string, projectPath: string, executionPlan?: AgentRole[]): Promise<string> {
     const workflowId = uuidv4();
     const title = userPrompt.slice(0, 80) + (userPrompt.length > 80 ? '...' : '');
+    const normalizedPlan = normalizeExecutionPlan(executionPlan);
 
-    this.dbOps.createWorkflow(workflowId, title, userPrompt, projectPath);
+    this.dbOps.createWorkflow(workflowId, title, userPrompt, projectPath, normalizedPlan);
 
-    const pipeline = createPipelineState(workflowId);
+    const pipeline = createPipelineState(workflowId, normalizedPlan);
     pipeline.status = 'running';
     this.pipelines.set(workflowId, pipeline);
     this.stepOutputs.set(workflowId, new Map());
@@ -63,11 +64,11 @@ export class WorkflowEngine extends EventEmitter {
     this.stepIds.set(workflowId, stepIdMap);
 
     this.dbOps.updateWorkflowStatus(workflowId, 'running');
-    this.emit('workflow:created', workflowId, title);
+    this.emit('workflow:created', workflowId, title, normalizedPlan);
 
     // Defer to macrotask so callers can subscribe (microtask) before first step:started fires
     setTimeout(() => {
-      this.executePipeline(workflowId, userPrompt, projectPath).catch((err) => {
+      this.executePipeline(workflowId, userPrompt, projectPath, normalizedPlan).catch((err) => {
         console.error(`Workflow ${workflowId} failed:`, err);
       });
     }, 0);
@@ -75,11 +76,22 @@ export class WorkflowEngine extends EventEmitter {
     return workflowId;
   }
 
-  private async executePipeline(workflowId: string, userPrompt: string, projectPath: string) {
+  private async executePipeline(
+    workflowId: string,
+    userPrompt: string,
+    projectPath: string,
+    executionPlan: AgentRole[],
+  ) {
     const pipeline = this.pipelines.get(workflowId);
     if (!pipeline) return;
 
+    const selected = new Set(executionPlan);
+
     for (const stage of PIPELINE_STAGES) {
+      const stageRoles = stage.roles.filter((role) => selected.has(role));
+      if (stageRoles.length === 0) {
+        continue;
+      }
       // Check if cancelled
       if ((pipeline.status as string) === 'cancelled') {
         this.cleanupWorkflow(workflowId);
@@ -99,14 +111,14 @@ export class WorkflowEngine extends EventEmitter {
 
       // Execute all roles in this stage in parallel
       const results = await Promise.allSettled(
-        stage.roles.map(role => this.executeStep(workflowId, role, userPrompt, projectPath))
+        stageRoles.map(role => this.executeStep(workflowId, role, userPrompt, projectPath))
       );
 
       // Check for failures after all peers finish
       const failedRoles: string[] = [];
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
-        const role = stage.roles[i];
+        const role = stageRoles[i];
         const stepState = pipeline.steps.find(s => s.role === role);
 
         if (result.status === 'fulfilled' && result.value) {

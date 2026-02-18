@@ -21,6 +21,7 @@ export interface AgentState {
 
 interface AgentStoreState {
   agents: Record<AgentRole, AgentState>;
+  applyExecutionPlan: (roles: AgentRole[]) => void;
   appendChunks: (role: AgentRole, chunks: string[]) => void;
   setAgentStatus: (role: AgentRole, status: StepStatus) => void;
   setAgentStarted: (role: AgentRole) => void;
@@ -60,6 +61,18 @@ function createInitialAgents(): Record<AgentRole, AgentState> {
 
 export const useAgentStore = create<AgentStoreState>((set) => ({
   agents: createInitialAgents(),
+
+  applyExecutionPlan: (roles) =>
+    set(() => {
+      const selected = new Set(roles);
+      const base = createInitialAgents();
+      for (const role of AGENT_ORDER) {
+        if (!selected.has(role)) {
+          base[role].status = "skipped";
+        }
+      }
+      return { agents: base };
+    }),
 
   appendChunks: (role, chunks) =>
     set((state) => ({
