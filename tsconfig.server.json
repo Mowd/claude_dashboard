@@ -17,5 +17,5 @@
     }
   },
   "include": ["server.ts", "bin/**/*.ts", "src/lib/**/*.ts", "src/types/**/*.d.ts"],
-  "exclude": ["node_modules", ".next"]
+  "exclude": ["node_modules", ".next", "src/lib/i18n/useI18n.ts"]
 }
