@@ -100,7 +100,13 @@ claude_dashboard/
 └── tsconfig.json
 ```
 
-## Changelog (0.1.0 → 0.4.0)
+## Changelog (0.1.0 → 0.5.0)
+
+### 0.5.0
+
+- Added **tool use summaries** in agent streaming output — live display of which tools (Read, Edit, Bash, etc.) each agent is invoking with key parameters.
+- Fixed **horizontal scrollbar overflow** across all pages by adding overflow constraints at multiple CSS and component levels (prose word-break, grid clipping, vertical-only scroll on history pages).
+- Improved **agent completion state** — clean final output replaces streaming chunks so tool summaries are shown during execution but removed from the finished result.
 
 ### 0.4.0
 
