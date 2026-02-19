@@ -144,7 +144,7 @@ export function HistoryTable() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-w-0 overflow-hidden">
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={status}
@@ -225,8 +225,8 @@ export function HistoryTable() {
           {t("history.empty")}
         </div>
       ) : (
-        <div className="overflow-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-auto max-w-full">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
                 <th className="text-left py-2 px-3 font-medium">{t("history.table.title")}</th>

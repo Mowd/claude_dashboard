@@ -82,9 +82,9 @@ export function AgentOutput({
     <div
       ref={ref}
       onScroll={handleScroll}
-      className="agent-output overflow-y-auto h-full px-2 py-1"
+      className="agent-output overflow-y-auto overflow-x-hidden h-full px-2 py-1 min-w-0"
     >
-      <div className="prose prose-invert prose-sm max-w-none">
+      <div className="prose prose-invert prose-sm max-w-none min-w-0 break-words">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
       </div>
       {isStreaming && (

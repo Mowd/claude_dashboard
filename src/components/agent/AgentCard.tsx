@@ -56,7 +56,7 @@ export function AgentCard({ role }: AgentCardProps) {
 
   return (
     <div
-      className="flex flex-col h-full rounded-lg border bg-[#1F2229] overflow-hidden"
+      className="flex flex-col h-full min-w-0 rounded-lg border bg-[#1F2229] overflow-hidden"
       style={{
         borderColor:
           status === "running"

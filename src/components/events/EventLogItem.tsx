@@ -23,7 +23,7 @@ export function EventLogItem({ event }: { event: EventLogItemType }) {
   const agentColor = event.role ? AGENT_CONFIG[event.role]?.color : undefined;
 
   return (
-    <div className="flex items-start gap-2 px-3 py-1 text-xs hover:bg-white/5">
+    <div className="flex items-start gap-2 px-3 py-1 text-xs hover:bg-white/5 min-w-0 overflow-hidden">
       <span className="text-muted-foreground shrink-0 font-mono">{time}</span>
       {event.role && (
         <span
@@ -33,7 +33,7 @@ export function EventLogItem({ event }: { event: EventLogItemType }) {
           [{AGENT_CONFIG[event.role]?.label}]
         </span>
       )}
-      <span className={typeStyles[event.type] || "text-gray-400"}>
+      <span className={`min-w-0 break-all ${typeStyles[event.type] || "text-gray-400"}`}>
         {event.message}
       </span>
     </div>

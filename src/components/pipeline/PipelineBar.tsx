@@ -13,7 +13,7 @@ export function PipelineBar() {
   const { t } = useI18n();
 
   return (
-    <div className="h-10 border-b border-border bg-card/50 flex items-center px-4 gap-1">
+    <div className="h-10 border-b border-border bg-card/50 flex items-center px-4 gap-1 min-w-0 overflow-x-hidden">
       {PIPELINE_STAGES.map((stage, stageIdx) => (
         <div key={stage.index} className="flex items-center">
           {stageIdx > 0 && (
