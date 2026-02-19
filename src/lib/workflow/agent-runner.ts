@@ -17,6 +17,8 @@ export class AgentRunner extends EventEmitter {
   private role: AgentRole;
   private activityTimer: ReturnType<typeof setTimeout> | null = null;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private currentToolName: string | null = null;
+  private currentToolInput = '';
 
   constructor(role: AgentRole) {
     super();
@@ -143,7 +145,9 @@ export class AgentRunner extends EventEmitter {
             if (block?.type === 'thinking') {
               this.emit('activity', { kind: 'thinking' });
             } else if (block?.type === 'tool_use') {
-              this.emit('activity', { kind: 'tool_use', toolName: block.name || 'unknown' });
+              this.currentToolName = block.name || 'unknown';
+              this.currentToolInput = '';
+              this.emit('activity', { kind: 'tool_use', toolName: this.currentToolName });
             } else if (block?.type === 'text') {
               this.emit('activity', { kind: 'text' });
             }
@@ -153,10 +157,20 @@ export class AgentRunner extends EventEmitter {
             if (inner.delta?.type === 'text_delta' && inner.delta.text) {
               this.output += inner.delta.text;
               this.emit('stream', inner.delta.text);
+            } else if (inner.delta?.type === 'input_json_delta' && inner.delta.partial_json) {
+              this.currentToolInput += inner.delta.partial_json;
             }
             break;
           }
           case 'content_block_stop':
+            if (this.currentToolName) {
+              const summary = this.formatToolSummary(this.currentToolName, this.currentToolInput);
+              if (summary) {
+                this.emit('stream', summary);
+              }
+              this.currentToolName = null;
+              this.currentToolInput = '';
+            }
             this.emit('activity', { kind: 'idle' });
             break;
         }
@@ -246,6 +260,44 @@ export class AgentRunner extends EventEmitter {
       clearTimeout(this.hardTimeoutTimer);
       this.hardTimeoutTimer = null;
     }
+  }
+
+  private formatToolSummary(toolName: string, rawInput: string): string | null {
+    let detail = '';
+    try {
+      const input = JSON.parse(rawInput);
+      switch (toolName) {
+        case 'Read':
+        case 'Edit':
+        case 'Write':
+          detail = input.file_path || '';
+          break;
+        case 'Bash':
+          detail = input.command || '';
+          if (detail.length > 80) detail = detail.slice(0, 80) + '…';
+          break;
+        case 'Grep':
+          detail = input.pattern || '';
+          if (input.path) detail += ` in ${input.path}`;
+          break;
+        case 'Glob':
+          detail = input.pattern || '';
+          if (input.path) detail += ` in ${input.path}`;
+          break;
+        default: {
+          const firstStr = Object.values(input).find((v): v is string => typeof v === 'string');
+          if (firstStr) {
+            detail = firstStr.length > 80 ? firstStr.slice(0, 80) + '…' : firstStr;
+          }
+          break;
+        }
+      }
+    } catch {
+      // JSON parse failed — skip detail
+    }
+
+    if (!detail) return `\n> **[${toolName}]**\n\n`;
+    return `\n> **[${toolName}]** \`${detail}\`\n\n`;
   }
 
   getOutput(): string {

@@ -111,19 +111,24 @@ export const useAgentStore = create<AgentStoreState>((set) => ({
     })),
 
   setAgentCompleted: (role, output, durationMs, tokensIn, tokensOut) =>
-    set((state) => ({
-      agents: {
-        ...state.agents,
-        [role]: {
-          ...state.agents[role],
-          status: "completed",
-          completedAt: Date.now(),
-          durationMs,
-          tokensIn: tokensIn ?? null,
-          tokensOut: tokensOut ?? null,
+    set((state) => {
+      const existing = state.agents[role];
+      const finalChunks = output ? [output] : existing.outputChunks;
+      return {
+        agents: {
+          ...state.agents,
+          [role]: {
+            ...existing,
+            status: "completed",
+            completedAt: Date.now(),
+            durationMs,
+            tokensIn: tokensIn ?? null,
+            tokensOut: tokensOut ?? null,
+            outputChunks: finalChunks,
+          },
         },
-      },
-    })),
+      };
+    }),
 
   setAgentFailed: (role, error) =>
     set((state) => ({
