@@ -4,7 +4,7 @@
 
 以 Claude 驅動的多代理軟體開發儀表板。
 
-![Claude Dashboard Screenshot](https://meee.com.tw/BF17g4Y.jpg)
+![Claude Dashboard Screenshot](https://meee.com.tw/sk43faV.jpg)
 
 ## 功能特色
 

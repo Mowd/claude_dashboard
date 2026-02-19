@@ -4,7 +4,7 @@ English | [繁體中文](README.zh-TW.md)
 
 Multi-agent software development dashboard powered by Claude.
 
-![Claude Dashboard Screenshot](https://meee.com.tw/BF17g4Y.jpg)
+![Claude Dashboard Screenshot](https://meee.com.tw/h5u5eHQ.jpg)
 
 ## Features
 
