@@ -49,7 +49,7 @@ export default function WorkflowDetailPage() {
 
   return (
     <DashboardShell>
-      <div className="p-4 space-y-4 overflow-auto">
+      <div className="p-4 space-y-4 overflow-y-auto overflow-x-hidden">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t("historyDetail.title")}</h2>
           <Link href="/history" className="text-xs text-muted-foreground hover:text-foreground">

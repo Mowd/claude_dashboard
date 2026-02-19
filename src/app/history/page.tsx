@@ -9,7 +9,7 @@ export default function HistoryPage() {
 
   return (
     <DashboardShell>
-      <div className="h-full overflow-auto p-4">
+      <div className="h-full overflow-y-auto overflow-x-hidden p-4">
         <h2 className="text-lg font-semibold mb-4">{t("history.title")}</h2>
         <HistoryTable />
       </div>

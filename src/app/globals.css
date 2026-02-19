@@ -31,8 +31,9 @@
   * {
     @apply border-border;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
   }
 }
 
@@ -57,15 +58,31 @@
 
 /* Agent card markdown prose overrides */
 .agent-output .prose {
-  @apply text-sm leading-relaxed;
+  @apply text-sm leading-relaxed break-words;
+  overflow-wrap: anywhere;
 }
 
 .agent-output .prose pre {
-  @apply bg-black/40 rounded-md text-xs;
+  @apply bg-black/40 rounded-md text-xs overflow-x-auto max-w-full;
+}
+
+.agent-output .prose table {
+  @apply w-full table-fixed max-w-full;
 }
 
 .agent-output .prose code {
-  @apply text-xs;
+  @apply text-xs break-all;
+}
+
+.agent-output .prose blockquote {
+  @apply border-l-2 border-l-blue-500/30 bg-blue-950/20 text-muted-foreground
+         text-xs py-0.5 px-2 my-1 not-italic;
+}
+.agent-output .prose blockquote strong {
+  @apply text-blue-400/80 font-semibold;
+}
+.agent-output .prose blockquote code {
+  @apply text-muted-foreground bg-transparent px-0;
 }
 
 /* Terminal container */
